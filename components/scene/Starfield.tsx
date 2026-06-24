@@ -1,0 +1,49 @@
+'use client';
+
+import { useMemo, useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
+import * as THREE from 'three';
+
+/** Procedural background starfield — magnitude-varied points with slow parallax. */
+export function Starfield({ count = 3500, radius = 90 }: { count?: number; radius?: number }) {
+  const ref = useRef<THREE.Points>(null);
+
+  const { positions, sizes } = useMemo(() => {
+    const positions = new Float32Array(count * 3);
+    const sizes = new Float32Array(count);
+    for (let i = 0; i < count; i++) {
+      // uniform on a sphere shell
+      const u = Math.random();
+      const v = Math.random();
+      const theta = 2 * Math.PI * u;
+      const phi = Math.acos(2 * v - 1);
+      const r = radius * (0.8 + Math.random() * 0.2);
+      positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+      positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+      positions[i * 3 + 2] = r * Math.cos(phi);
+      sizes[i] = Math.random() < 0.06 ? 1.6 + Math.random() * 1.2 : 0.5 + Math.random() * 0.8;
+    }
+    return { positions, sizes };
+  }, [count, radius]);
+
+  useFrame((_, delta) => {
+    if (ref.current) ref.current.rotation.y += delta * 0.005;
+  });
+
+  return (
+    <points ref={ref}>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+        <bufferAttribute attach="attributes-size" args={[sizes, 1]} />
+      </bufferGeometry>
+      <pointsMaterial
+        color="#dfe8ff"
+        size={0.18}
+        sizeAttenuation
+        transparent
+        opacity={0.9}
+        depthWrite={false}
+      />
+    </points>
+  );
+}

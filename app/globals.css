@@ -1,0 +1,51 @@
+@import 'tailwindcss';
+
+:root {
+  --black: #000000;
+  --surface: #111111;
+  --surface-raised: #1a1a1a;
+  --border: #222222;
+  --border-visible: #333333;
+  --text-disabled: #666666;
+  --text-secondary: #999999;
+  --text-primary: #e8e8e8;
+  --text-display: #ffffff;
+  --accent: #d71921; /* signal red — zenith / selected / error */
+  --success: #4a9e5c; /* satellites / visible / live */
+  --warning: #d4a843; /* warm planet marker */
+  --interactive: #5b9bf6; /* coords / links / constellation lines */
+}
+
+@theme inline {
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-border-visible: var(--border-visible);
+  --color-accent: var(--accent);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-interactive: var(--interactive);
+  --font-sans: var(--font-grotesk);
+  --font-mono: var(--font-mono);
+}
+
+html,
+body {
+  height: 100%;
+  background: var(--black);
+  color: var(--text-primary);
+  font-family: var(--font-grotesk), system-ui, sans-serif;
+  overscroll-behavior: none;
+}
+
+.font-mono {
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+}
+
+/* Terse mono label, ALL CAPS, tracked — the instrument-panel voice. */
+.label {
+  font-family: var(--font-mono), monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
