@@ -47,3 +47,6 @@ next-env.d.ts
 graphify-skill/
 headroom-plugin/
 .mcp.json
+
+# graphify generated graph
+graphify-out/

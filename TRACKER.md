@@ -3,7 +3,7 @@
 Single source of truth for what's done / in progress / blocked. Kept honest.
 
 ## Current focus
-Phase 4 — differentiators + responsive + deploy. (Working end-to-end demo exists.)
+Deploy — production build running; 50-file initial commit made; waiting on `gh auth login` then push + Vercel.
 
 ## Phase status
 | Phase | Scope | Status | Notes |
@@ -12,7 +12,7 @@ Phase 4 — differentiators + responsive + deploy. (Working end-to-end demo exis
 | P1 | Proxy routes + astronomy pipeline | DONE | Pipeline+store+routes+data built & verified |
 | P2 | Interactive globe + location pick | DONE | Landing→globe→pick→card→confirm working visually |
 | P3 | Sky view dome (the product) | DONE (core) | Live dome: planets/stars/constellations/satellites + panel + dropdowns. Mobile bottom-sheet + ISS track pending |
-| P4 | Differentiators + polish + deploy | TODO | Shareable URL, ISS orbit/speed, geolocation, responsive, perf, Vercel |
+| P4 | Differentiators + polish + deploy | IN PROGRESS | Shareable URL ✓, ISS orbit/speed ✓, geolocation ✓, git commit ✓; Vercel deploy PENDING |
 
 ## P2/P3 — done (visible product)
 - Dark theme + Space Grotesk/Mono fonts; Nothing-style chrome + design tokens in globals.css.
