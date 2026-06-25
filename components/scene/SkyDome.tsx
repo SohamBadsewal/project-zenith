@@ -1,11 +1,12 @@
 'use client';
 
-import { useMemo } from 'react';
-import { Billboard, Line, Text } from '@react-three/drei';
+import { useMemo, useState } from 'react';
+import type { ThreeEvent } from '@react-three/fiber';
+import { Billboard, Html, Line, Text } from '@react-three/drei';
 import { altAzToVec3, horizonRing, altitudeRing } from '@/lib/dome';
 import { circlePointTexture } from '@/lib/pointTexture';
 import { satId, type SkyData, type IssOrbitPoint } from '@/hooks/useSky';
-import type { CelestialObject } from '@/types';
+import type { CelestialObject, SatelliteState } from '@/types';
 
 const DOME_R = 5;
 
@@ -50,6 +51,18 @@ export function SkyDome({
   const brightStars = useMemo(() => starPositions(data.stars, -2, 2.5), [data.stars]);
   const dimStars = useMemo(() => starPositions(data.stars, 2.5, 7), [data.stars]);
   const starTex = useMemo(() => circlePointTexture(), []);
+  const [hoverId, setHoverId] = useState<string | null>(null);
+
+  const enter = (id: string) => (e: ThreeEvent<PointerEvent>) => {
+    e.stopPropagation();
+    setHoverId(id);
+    document.body.style.cursor = 'pointer';
+  };
+  const leave = (id: string) => (e: ThreeEvent<PointerEvent>) => {
+    e.stopPropagation();
+    setHoverId((cur) => (cur === id ? null : cur));
+    document.body.style.cursor = '';
+  };
 
   const rings = useMemo(
     () => ({
@@ -132,22 +145,27 @@ export function SkyDome({
           .filter((b) => b.aboveHorizon)
           .map((b) => {
             const selected = selectionId === b.id;
+            const hovered = hoverId === b.id;
             return (
               <Billboard key={b.id} position={altAzToVec3(b.altDeg, b.azDeg, DOME_R)}>
                 <mesh
+                  scale={hovered ? 1.4 : 1}
                   onClick={(e) => {
                     e.stopPropagation();
                     onSelect(selected ? null : b.id);
                   }}
+                  onPointerOver={enter(b.id)}
+                  onPointerOut={leave(b.id)}
                 >
                   <circleGeometry args={[b.kind === 'sun' || b.kind === 'moon' ? 0.16 : 0.1, 24]} />
-                  <meshBasicMaterial color={selected ? '#d71921' : BODY_COLOR[b.kind]} />
+                  <meshBasicMaterial color={selected ? '#d71921' : hovered ? '#ffffff' : BODY_COLOR[b.kind]} />
                 </mesh>
-                {layers.labels && (
+                {layers.labels && !hovered && (
                   <Text position={[0, 0.28, 0]} fontSize={0.16} color="#999999" anchorX="center">
                     {b.name}
                   </Text>
                 )}
+                {hovered && <Tooltip title={b.name} lines={bodyLines(b)} />}
               </Billboard>
             );
           })}
@@ -165,22 +183,27 @@ export function SkyDome({
             const isISS = s.name.includes('ISS');
             const id = satId(s.noradId);
             const selected = selectionId === id;
+            const hovered = hoverId === id;
             return (
               <Billboard key={id} position={altAzToVec3(s.elevationDeg, s.azDeg, DOME_R)}>
                 <mesh
+                  scale={hovered ? 1.5 : 1}
                   onClick={(e) => {
                     e.stopPropagation();
                     onSelect(selected ? null : id);
                   }}
+                  onPointerOver={enter(id)}
+                  onPointerOut={leave(id)}
                 >
                   <circleGeometry args={[isISS ? 0.12 : 0.05, 16]} />
-                  <meshBasicMaterial color={selected ? '#d71921' : '#4a9e5c'} />
+                  <meshBasicMaterial color={selected ? '#d71921' : hovered ? '#aef0c0' : '#4a9e5c'} />
                 </mesh>
-                {layers.labels && isISS && (
+                {layers.labels && isISS && !hovered && (
                   <Text position={[0, 0.26, 0]} fontSize={0.16} color="#4a9e5c" anchorX="center">
                     ISS
                   </Text>
                 )}
+                {hovered && <Tooltip title={s.name} lines={satLines(s)} />}
               </Billboard>
             );
           })}
@@ -197,6 +220,56 @@ const zenithCircle: [number, number, number][] = (() => {
   }
   return pts;
 })();
+
+const KIND_LABEL: Record<string, string> = {
+  sun: 'STAR · OUR SUN',
+  moon: 'MOON',
+  planet: 'PLANET',
+  star: 'STAR',
+};
+
+function bodyLines(b: CelestialObject): string[] {
+  const lines = [`${KIND_LABEL[b.kind] ?? 'BODY'} · ALT ${Math.round(b.altDeg)}° · AZ ${Math.round(b.azDeg)}°`];
+  if (b.kind === 'moon' && b.phase != null) lines.push(`ILLUMINATED ${Math.round(b.phase * 100)}%`);
+  else if (b.distanceAu != null) lines.push(`${b.distanceAu.toFixed(2)} AU from Earth`);
+  else if (b.magnitude != null) lines.push(`MAG ${b.magnitude.toFixed(1)}`);
+  return lines;
+}
+
+function satLines(s: SatelliteState): string[] {
+  const lines = [`SATELLITE · ALT ${Math.round(s.elevationDeg)}° · AZ ${Math.round(s.azDeg)}°`];
+  const parts: string[] = [];
+  if (s.velocityKmS != null) parts.push(`${s.velocityKmS.toFixed(2)} km/s`);
+  parts.push(`${Math.round(s.altKm)} km up`);
+  lines.push(parts.join(' · '));
+  return lines;
+}
+
+/** Screen-anchored HTML label that pops up on hover, in the Nothing palette. */
+function Tooltip({ title, lines }: { title: string; lines: string[] }) {
+  return (
+    <Html position={[0, 0.32, 0]} center style={{ pointerEvents: 'none', userSelect: 'none' }}>
+      <div
+        style={{
+          transform: 'translateY(-100%)',
+          whiteSpace: 'nowrap',
+          border: '1px solid var(--border-visible, #333)',
+          background: 'var(--surface, rgba(10,10,10,0.92))',
+          padding: '6px 10px',
+          fontFamily: 'var(--font-mono, ui-monospace, monospace)',
+          lineHeight: 1.4,
+        }}
+      >
+        <div style={{ color: 'var(--text-primary, #fff)', fontSize: 13, fontWeight: 500 }}>{title}</div>
+        {lines.map((l, i) => (
+          <div key={i} style={{ color: 'var(--text-secondary, #999)', fontSize: 11 }}>
+            {l}
+          </div>
+        ))}
+      </div>
+    </Html>
+  );
+}
 
 function Cardinal({ label, alt, az }: { label: string; alt: number; az: number }) {
   return (
