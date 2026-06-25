@@ -105,8 +105,9 @@ export default function Page() {
     <main className="relative h-screen w-screen overflow-hidden bg-black">
       {mounted && !inSky && (
         <Canvas camera={{ position: [0, 0, 3], fov: 45 }}>
-          <ambientLight intensity={0.35} />
+          <ambientLight intensity={0.6} />
           <directionalLight position={[5, 3, 5]} intensity={2.2} />
+          <directionalLight position={[-5, -3, -5]} intensity={0.4} />
           <Starfield />
           <Globe />
           <OrbitControls enablePan={false} minDistance={1.4} maxDistance={5} enableDamping />

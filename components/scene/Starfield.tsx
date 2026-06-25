@@ -21,7 +21,7 @@ export function Starfield({ count = 3500, radius = 90 }: { count?: number; radiu
       positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
       positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
       positions[i * 3 + 2] = r * Math.cos(phi);
-      sizes[i] = Math.random() < 0.06 ? 1.6 + Math.random() * 1.2 : 0.5 + Math.random() * 0.8;
+      sizes[i] = Math.random() < 0.09 ? 1.8 + Math.random() * 1.4 : 0.6 + Math.random() * 0.9;
     }
     return { positions, sizes };
   }, [count, radius]);
@@ -37,11 +37,11 @@ export function Starfield({ count = 3500, radius = 90 }: { count?: number; radiu
         <bufferAttribute attach="attributes-size" args={[sizes, 1]} />
       </bufferGeometry>
       <pointsMaterial
-        color="#dfe8ff"
-        size={0.18}
+        color="#eaf0ff"
+        size={0.24}
         sizeAttenuation
         transparent
-        opacity={0.9}
+        opacity={1.0}
         depthWrite={false}
       />
     </points>
