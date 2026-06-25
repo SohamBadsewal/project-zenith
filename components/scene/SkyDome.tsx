@@ -94,7 +94,7 @@ export function SkyDome({
 
       {/* constellation lines */}
       {layers.constellations &&
-        data.constellations.flatMap((c) =>
+        data.constellations.flatMap((c, ci) =>
           c.paths.map((path, i) => {
             const pts: [number, number, number][] = [];
             for (const [alt, az] of path) {
@@ -109,7 +109,7 @@ export function SkyDome({
             if (pts.length < 2) return null;
             return (
               <Line
-                key={`${c.id}-${i}`}
+                key={`${c.id}-${ci}-${i}`}
                 points={pts}
                 color="#5b9bf6"
                 lineWidth={0.8}
