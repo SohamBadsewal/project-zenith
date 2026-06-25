@@ -125,3 +125,20 @@ export interface GeocodeResponse {
   timezone?: string;
   elevationM?: number;
 }
+
+// ── MapTiler proxy contracts (app/api/maptiler/*) ─────────────────────
+
+export type MapTilerTileset = 'satellite-v4' | 'v3' | 'terrain-rgb';
+
+export interface MapTilerGeocodeFeature {
+  placeName: string; // MapTiler "place_name" (full, comma-separated)
+  center: [number, number]; // [lon, lat]
+  placeType: string[]; // e.g. ["city"], ["address"]
+  relevance: number; // 0..1
+}
+
+export interface MapTilerGeocodeResponse {
+  features: MapTilerGeocodeFeature[];
+  source: 'maptiler';
+  cached?: boolean;
+}

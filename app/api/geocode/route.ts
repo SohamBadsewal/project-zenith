@@ -43,6 +43,7 @@ export async function GET(req: NextRequest) {
     /* leave timezone undefined */
   }
 
+  // Try MapTiler first (key lives in /api/maptiler/geocode, browser stays keyless).
   try {
     const r = await fetch(
       `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=10`,
@@ -57,6 +58,24 @@ export async function GET(req: NextRequest) {
     }
   } catch {
     /* non-fatal — coordinates-only card */
+  }
+
+  // Fallback: MapTiler geocoding (if a key is configured).
+  if (!out.placeName) {
+    try {
+      const base = process.env.NEXT_PUBLIC_MAPTILER_KEY
+        ? `https://api.maptiler.com/geocoding/${lon},${lat}.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`
+        : null;
+      if (base) {
+        const r = await fetch(base, { next: { revalidate: 86400 } });
+        if (r.ok) {
+          const j = (await r.json()) as { features?: { place_name?: string }[] };
+          out.placeName = j.features?.[0]?.place_name;
+        }
+      }
+    } catch {
+      /* non-fatal — keep whatever Nominatim gave */
+    }
   }
 
   return NextResponse.json(out);
