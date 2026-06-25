@@ -68,13 +68,17 @@ KEY="<the real key>"
 curl -sI "https://api.maptiler.com/maps/satellite-v4/0/0/0.jpg?key=$KEY" | head -1
 # Vector buildings (MVT) — confirm the tileset slug works
 curl -sI "https://api.maptiler.com/tiles/v3/0/0/0.pbf?key=$KEY" | head -1
-# Terrain-RGB
-curl -sI "https://api.maptiler.com/terrain-rgb/0/0/0.png?key=$KEY" | head -1
+# Terrain-RGB (NOTE: /tiles/ prefix, NOT /terrain-rgb/ root; maxzoom 12)
+curl -sI "https://api.maptiler.com/tiles/terrain-rgb/0/0/0.png?key=$KEY" | head -1
 ```
 
-If any returns 403/404, record the exact working slug and update `lib/maptiler.ts`
-(Task 4) accordingly before proceeding. **This resolves the open tileset-ID item from
-the spec (§11, first bullet).**
+**VERIFIED 2026-06-26** (all 4 returned HTTP 200 with the real key):
+- raster `satellite-v4` → `/maps/satellite-v4/{z}/{x}/{y}.jpg`
+- vector `v3` → `/tiles/v3/{z}/{x}/{y}.pbf`
+- terrain-rgb → `/tiles/terrain-rgb/{z}/{x}/{y}.png` (**maxzoom 12** — terrain resolution caps at z=12, not z=22 like raster/vector)
+- geocoding → `/geocoding/{query}.json`
+
+This resolves the open tileset-ID item from the spec (§11, first bullet).
 
 - [ ] **Step 4: Commit env wiring (NOT `.env.local`)**
 
@@ -160,9 +164,9 @@ describe('maptiler endpoint builders', () => {
     );
   });
 
-  it('builds a terrain-rgb tile URL', () => {
+  it('builds a terrain-rgb tile URL (note: /tiles/ prefix, not root)', () => {
     expect(terrainTileUrl(5, 10, 15, KEY)).toBe(
-      'https://api.maptiler.com/terrain-rgb/15/10/5.png?key=test-key-123',
+      'https://api.maptiler.com/tiles/terrain-rgb/15/10/5.png?key=test-key-123',
     );
   });
 
@@ -235,10 +239,10 @@ export function vectorTileUrl(
   return `${BASE}/tiles/${tileset}/${z}/${x}/${y}.pbf?key=${key}`;
 }
 
-/** Terrain-RGB tile → .png at z/x/y. */
+/** Terrain-RGB tile → .png at z/x/y. NOTE: maxzoom 12 (terrain caps lower than raster/vector). */
 export function terrainTileUrl(lat: number, lon: number, z: number, key: string): string {
   const { x, y } = latLonToTileXY(lat, lon, z);
-  return `${BASE}/terrain-rgb/${z}/${x}/${y}.png?key=${key}`;
+  return `${BASE}/tiles/terrain-rgb/${z}/${x}/${y}.png?key=${key}`;
 }
 
 /** Forward geocode (place name → coords). */
@@ -363,7 +367,7 @@ export function vectorTileUrlXYZ(tileset: MapTilerTileset, x: number, y: number,
   return `${BASE}/tiles/${tileset}/${z}/${x}/${y}.pbf?key=${key}`;
 }
 export function terrainTileUrlXYZ(x: number, y: number, z: number, key: string): string {
-  return `${BASE}/terrain-rgb/${z}/${x}/${y}.png?key=${key}`;
+  return `${BASE}/tiles/terrain-rgb/${z}/${x}/${y}.png?key=${key}`;
 }
 ```
 
