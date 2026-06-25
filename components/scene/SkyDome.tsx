@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { Billboard, Line, Text } from '@react-three/drei';
 import { altAzToVec3, horizonRing, altitudeRing } from '@/lib/dome';
+import { circlePointTexture } from '@/lib/pointTexture';
 import { satId, type SkyData, type IssOrbitPoint } from '@/hooks/useSky';
 import type { CelestialObject } from '@/types';
 
@@ -48,6 +49,7 @@ export function SkyDome({
 }) {
   const brightStars = useMemo(() => starPositions(data.stars, -2, 2.5), [data.stars]);
   const dimStars = useMemo(() => starPositions(data.stars, 2.5, 7), [data.stars]);
+  const starTex = useMemo(() => circlePointTexture(), []);
 
   const rings = useMemo(
     () => ({
@@ -86,13 +88,13 @@ export function SkyDome({
             <bufferGeometry>
               <bufferAttribute attach="attributes-position" args={[dimStars, 3]} />
             </bufferGeometry>
-            <pointsMaterial color="#cdd6f4" size={0.05} sizeAttenuation transparent opacity={0.7} depthWrite={false} />
+            <pointsMaterial map={starTex} color="#cdd6f4" size={0.07} sizeAttenuation transparent opacity={0.75} depthWrite={false} />
           </points>
           <points>
             <bufferGeometry>
               <bufferAttribute attach="attributes-position" args={[brightStars, 3]} />
             </bufferGeometry>
-            <pointsMaterial color="#ffffff" size={0.11} sizeAttenuation transparent depthWrite={false} />
+            <pointsMaterial map={starTex} color="#ffffff" size={0.15} sizeAttenuation transparent depthWrite={false} />
           </points>
         </>
       )}

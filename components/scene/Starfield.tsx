@@ -3,6 +3,7 @@
 import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { circlePointTexture } from '@/lib/pointTexture';
 
 /** Procedural background starfield — magnitude-varied points with slow parallax. */
 export function Starfield({ count = 3500, radius = 90 }: { count?: number; radius?: number }) {
@@ -26,6 +27,8 @@ export function Starfield({ count = 3500, radius = 90 }: { count?: number; radiu
     return { positions, sizes };
   }, [count, radius]);
 
+  const tex = useMemo(() => circlePointTexture(), []);
+
   useFrame((_, delta) => {
     if (ref.current) ref.current.rotation.y += delta * 0.005;
   });
@@ -37,6 +40,7 @@ export function Starfield({ count = 3500, radius = 90 }: { count?: number; radiu
         <bufferAttribute attach="attributes-size" args={[sizes, 1]} />
       </bufferGeometry>
       <pointsMaterial
+        map={tex}
         color="#eaf0ff"
         size={0.24}
         sizeAttenuation
