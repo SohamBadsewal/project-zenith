@@ -18,8 +18,10 @@ export function projectAltAz(
 /**
  * [altDeg, azDeg] → [x, y, z] on a celestial sphere of radius `radius`.
  * For an observer at the origin looking outward: zenith (alt 90°) is straight
- * up (+y), the horizon is the y≈0 great circle. Facing North (az 0° → −z),
- * East (az 90°) falls to the right (−x) — the natural naked-eye orientation.
+ * up (+y), the horizon is the y≈0 great circle. The camera sits at the origin
+ * looking outward; facing North (az 0° → −z) East (az 90°) falls to screen
+ * right (+x) and West to the left — the natural naked-eye horizon orientation
+ * (unlike the flat overhead chart, which is deliberately mirrored).
  */
 export function altAzToVec3(
   altDeg: number,
@@ -30,7 +32,7 @@ export function altAzToVec3(
   const a = azDeg * DEG2RAD;
   const cosEl = Math.cos(el);
   return [
-    -radius * cosEl * Math.sin(a),
+    radius * cosEl * Math.sin(a),
     radius * Math.sin(el),
     -radius * cosEl * Math.cos(a),
   ];

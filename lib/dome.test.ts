@@ -19,9 +19,9 @@ describe('altAzToVec3 — celestial sphere placement', () => {
     expect(z).toBeCloseTo(-R, 6);
   });
 
-  it('East horizon (az 90°) falls to the right at -x (facing north)', () => {
+  it('East horizon (az 90°) falls to screen-right at +x (facing north)', () => {
     const [x, y, z] = altAzToVec3(0, 90, R);
-    expect(x).toBeCloseTo(-R, 6);
+    expect(x).toBeCloseTo(R, 6);
     expect(y).toBeCloseTo(0, 6);
     expect(z).toBeCloseTo(0, 6);
   });
@@ -33,9 +33,9 @@ describe('altAzToVec3 — celestial sphere placement', () => {
     expect(z).toBeCloseTo(R, 6);
   });
 
-  it('West horizon (az 270°) falls to the left at +x', () => {
+  it('West horizon (az 270°) falls to screen-left at -x', () => {
     const [x] = altAzToVec3(0, 270, R);
-    expect(x).toBeCloseTo(R, 6);
+    expect(x).toBeCloseTo(-R, 6);
   });
 
   it('every point lies on the sphere of the given radius', () => {
