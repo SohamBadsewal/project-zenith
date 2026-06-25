@@ -115,10 +115,18 @@ export default function Page() {
       )}
 
       {mounted && inSky && (
-        <Canvas camera={{ position: [0, 0, 11], fov: 45 }}>
+        <Canvas camera={{ position: [0, 0, 0.1], fov: 70 }}>
           <Starfield count={1500} radius={60} />
           <SkyDome data={sky} layers={layers} selectionId={selectionId} onSelect={select} />
-          <OrbitControls enablePan={false} enableRotate={false} minDistance={6} maxDistance={16} />
+          <OrbitControls
+            enablePan={false}
+            enableZoom
+            rotateSpeed={-0.4}
+            minDistance={0.1}
+            maxDistance={2}
+            enableDamping
+            dampingFactor={0.12}
+          />
         </Canvas>
       )}
 

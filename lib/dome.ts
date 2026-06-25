@@ -15,6 +15,49 @@ export function projectAltAz(
   return [-r * Math.sin(az), r * Math.cos(az)];
 }
 
+/**
+ * [altDeg, azDeg] → [x, y, z] on a celestial sphere of radius `radius`.
+ * For an observer at the origin looking outward: zenith (alt 90°) is straight
+ * up (+y), the horizon is the y≈0 great circle. Facing North (az 0° → −z),
+ * East (az 90°) falls to the right (−x) — the natural naked-eye orientation.
+ */
+export function altAzToVec3(
+  altDeg: number,
+  azDeg: number,
+  radius = 1,
+): [number, number, number] {
+  const el = altDeg * DEG2RAD;
+  const a = azDeg * DEG2RAD;
+  const cosEl = Math.cos(el);
+  return [
+    -radius * cosEl * Math.sin(a),
+    radius * Math.sin(el),
+    -radius * cosEl * Math.cos(a),
+  ];
+}
+
+/** Great circle of the horizon (alt 0°) on the sphere, for drei <Line>. */
+export function horizonRing(radius = 1, segments = 128): [number, number, number][] {
+  const pts: [number, number, number][] = [];
+  for (let i = 0; i <= segments; i++) {
+    pts.push(altAzToVec3(0, (i / segments) * 360, radius));
+  }
+  return pts;
+}
+
+/** Small circle of constant altitude (e.g. 30°, 60°) on the sphere. */
+export function altitudeRing(
+  altDeg: number,
+  radius = 1,
+  segments = 128,
+): [number, number, number][] {
+  const pts: [number, number, number][] = [];
+  for (let i = 0; i <= segments; i++) {
+    pts.push(altAzToVec3(altDeg, (i / segments) * 360, radius));
+  }
+  return pts;
+}
+
 /** Points of a circle of radius `r` on the z=0 plane, for drei <Line>. */
 export function circlePoints(r: number, segments = 128): [number, number, number][] {
   const pts: [number, number, number][] = [];

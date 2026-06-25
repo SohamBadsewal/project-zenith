@@ -1,9 +1,8 @@
 'use client';
 
 import { useMemo } from 'react';
-import { Line, Text } from '@react-three/drei';
-import * as THREE from 'three';
-import { projectAltAz, circlePoints } from '@/lib/dome';
+import { Billboard, Line, Text } from '@react-three/drei';
+import { altAzToVec3, horizonRing, altitudeRing } from '@/lib/dome';
 import { satId, type SkyData, type IssOrbitPoint } from '@/hooks/useSky';
 import type { CelestialObject } from '@/types';
 
@@ -30,8 +29,8 @@ function starPositions(stars: CelestialObject[], minMag: number, maxMag: number)
     if (!s.aboveHorizon) continue;
     const mag = s.magnitude ?? 6;
     if (mag < minMag || mag >= maxMag) continue;
-    const [x, y] = projectAltAz(s.altDeg, s.azDeg, DOME_R);
-    pts.push(x, y, 0);
+    const [x, y, z] = altAzToVec3(s.altDeg, s.azDeg, DOME_R);
+    pts.push(x, y, z);
   }
   return new Float32Array(pts);
 }
@@ -51,28 +50,34 @@ export function SkyDome({
   const dimStars = useMemo(() => starPositions(data.stars, 2.5, 7), [data.stars]);
 
   const rings = useMemo(
-    () => [circlePoints(DOME_R), circlePoints((DOME_R * 2) / 3), circlePoints(DOME_R / 3)],
+    () => ({
+      horizon: horizonRing(DOME_R),
+      alt30: altitudeRing(30, DOME_R),
+      alt60: altitudeRing(60, DOME_R),
+    }),
     [],
   );
 
   return (
     <group>
-      {/* horizon + altitude rings */}
-      <Line points={rings[0]} color="#333333" lineWidth={1.5} />
-      <Line points={rings[1]} color="#222222" lineWidth={1} />
-      <Line points={rings[2]} color="#222222" lineWidth={1} />
+      {/* horizon great circle + altitude rings */}
+      <Line points={rings.horizon} color="#3a3a3a" lineWidth={1.5} />
+      <Line points={rings.alt30} color="#1f1f1f" lineWidth={1} />
+      <Line points={rings.alt60} color="#1f1f1f" lineWidth={1} />
 
-      {/* cardinal marks */}
-      <Cardinal label="N" pos={[0, DOME_R, 0]} />
-      <Cardinal label="E" pos={[-DOME_R, 0, 0]} />
-      <Cardinal label="S" pos={[0, -DOME_R, 0]} />
-      <Cardinal label="W" pos={[DOME_R, 0, 0]} />
+      {/* cardinal marks, just above the horizon */}
+      <Cardinal label="N" alt={3} az={0} />
+      <Cardinal label="E" alt={3} az={90} />
+      <Cardinal label="S" alt={3} az={180} />
+      <Cardinal label="W" alt={3} az={270} />
 
-      {/* zenith marker (dead centre) */}
-      <Line points={circlePoints(0.12, 32)} color="#d71921" lineWidth={1.5} />
-      <Text position={[0, -0.32, 0]} fontSize={0.16} color="#d71921" anchorX="center">
-        ZENITH
-      </Text>
+      {/* zenith marker (straight up) */}
+      <Billboard position={altAzToVec3(90, 0, DOME_R)}>
+        <Line points={zenithCircle} color="#d71921" lineWidth={1.5} />
+        <Text position={[0, -0.4, 0]} fontSize={0.18} color="#d71921" anchorX="center">
+          ZENITH
+        </Text>
+      </Billboard>
 
       {/* stars */}
       {layers.stars && (
@@ -103,8 +108,7 @@ export function SkyDome({
                 pts.length = 0;
                 continue;
               }
-              const [x, y] = projectAltAz(alt, az, DOME_R);
-              pts.push([x, y, 0]);
+              pts.push(altAzToVec3(alt, az, DOME_R));
             }
             if (pts.length < 2) return null;
             return (
@@ -125,10 +129,9 @@ export function SkyDome({
         data.bodies
           .filter((b) => b.aboveHorizon)
           .map((b) => {
-            const [x, y] = projectAltAz(b.altDeg, b.azDeg, DOME_R);
             const selected = selectionId === b.id;
             return (
-              <group key={b.id} position={[x, y, 0.01]}>
+              <Billboard key={b.id} position={altAzToVec3(b.altDeg, b.azDeg, DOME_R)}>
                 <mesh
                   onClick={(e) => {
                     e.stopPropagation();
@@ -139,11 +142,11 @@ export function SkyDome({
                   <meshBasicMaterial color={selected ? '#d71921' : BODY_COLOR[b.kind]} />
                 </mesh>
                 {layers.labels && (
-                  <Text position={[0, 0.26, 0]} fontSize={0.15} color="#999999" anchorX="center">
+                  <Text position={[0, 0.28, 0]} fontSize={0.16} color="#999999" anchorX="center">
                     {b.name}
                   </Text>
                 )}
-              </group>
+              </Billboard>
             );
           })}
 
@@ -157,12 +160,11 @@ export function SkyDome({
         data.satellites
           .filter((s) => s.aboveHorizon)
           .map((s) => {
-            const [x, y] = projectAltAz(s.elevationDeg, s.azDeg, DOME_R);
             const isISS = s.name.includes('ISS');
             const id = satId(s.noradId);
             const selected = selectionId === id;
             return (
-              <group key={id} position={[x, y, 0.02]}>
+              <Billboard key={id} position={altAzToVec3(s.elevationDeg, s.azDeg, DOME_R)}>
                 <mesh
                   onClick={(e) => {
                     e.stopPropagation();
@@ -173,22 +175,34 @@ export function SkyDome({
                   <meshBasicMaterial color={selected ? '#d71921' : '#4a9e5c'} />
                 </mesh>
                 {layers.labels && isISS && (
-                  <Text position={[0, 0.24, 0]} fontSize={0.15} color="#4a9e5c" anchorX="center">
+                  <Text position={[0, 0.26, 0]} fontSize={0.16} color="#4a9e5c" anchorX="center">
                     ISS
                   </Text>
                 )}
-              </group>
+              </Billboard>
             );
           })}
     </group>
   );
 }
 
-function Cardinal({ label, pos }: { label: string; pos: [number, number, number] }) {
+/** Small red circle (in local billboard space) reused for the zenith marker. */
+const zenithCircle: [number, number, number][] = (() => {
+  const pts: [number, number, number][] = [];
+  for (let i = 0; i <= 32; i++) {
+    const a = (i / 32) * Math.PI * 2;
+    pts.push([Math.cos(a) * 0.14, Math.sin(a) * 0.14, 0]);
+  }
+  return pts;
+})();
+
+function Cardinal({ label, alt, az }: { label: string; alt: number; az: number }) {
   return (
-    <Text position={pos} fontSize={0.22} color="#999999" anchorX="center" anchorY="middle">
-      {label}
-    </Text>
+    <Billboard position={altAzToVec3(alt, az, DOME_R)}>
+      <Text fontSize={0.26} color="#999999" anchorX="center" anchorY="middle">
+        {label}
+      </Text>
+    </Billboard>
   );
 }
 
@@ -200,8 +214,7 @@ function IssOrbitTrack({ points }: { points: IssOrbitPoint[] }) {
     let current: Array<[number, number, number]> = [];
     for (const p of points) {
       if (p.altDeg > 0) {
-        const [x, y] = projectAltAz(p.altDeg, p.azDeg, DOME_R);
-        current.push([x, y, 0.005]);
+        current.push(altAzToVec3(p.altDeg, p.azDeg, DOME_R));
       } else if (current.length >= 2) {
         segs.push(current);
         current = [];
