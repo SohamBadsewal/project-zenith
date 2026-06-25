@@ -34,6 +34,7 @@ export interface CelestialObject {
   source: 'astronomy-engine' | 'horizons';
   distanceAu?: number; // planets/sun, astronomical units
   phase?: number; // moon illuminated fraction 0..1
+  bv?: number; // B-V color index (stars only) — spectral tint for rendering
 }
 
 export interface SatelliteTLE {

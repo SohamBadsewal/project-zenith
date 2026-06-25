@@ -101,6 +101,7 @@ export function computeStar(
     magnitude: star.mag,
     aboveHorizon: hor.altitude > 0,
     source: 'astronomy-engine',
+    bv: star.bv,
   };
 }
 
