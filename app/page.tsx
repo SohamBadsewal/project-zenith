@@ -8,6 +8,7 @@ import { useSky } from '@/hooks/useSky';
 import { Globe } from '@/components/scene/Globe';
 import { Starfield } from '@/components/scene/Starfield';
 import { SkyDome, type Layers } from '@/components/scene/SkyDome';
+import { CinematicCamera } from '@/components/scene/CinematicCamera';
 import { Hud } from '@/components/ui/Hud';
 import { LocationCard } from '@/components/ui/LocationCard';
 import { LayerControls } from '@/components/ui/LayerControls';
@@ -73,9 +74,9 @@ export default function Page() {
     if (phase !== 'sky') hashWritten.current = false;
   }, [phase]);
 
-  useEffect(() => {
-    if (phase === 'descent') setPhase('sky');
-  }, [phase, setPhase]);
+  // The 'descent' phase is the cinematic reveal window; CinematicCamera flies
+  // the camera into the sphere and calls setPhase('sky') when it completes.
+  // (Shared-link restores set phase straight to 'sky', skipping the reveal.)
 
   const inSky = phase === 'sky' || phase === 'descent';
 
@@ -118,15 +119,18 @@ export default function Page() {
         <Canvas camera={{ position: [0, 0, 0.1], fov: 70 }}>
           <Starfield count={1500} radius={60} />
           <SkyDome data={sky} layers={layers} selectionId={selectionId} onSelect={select} />
-          <OrbitControls
-            enablePan={false}
-            enableZoom
-            rotateSpeed={-0.4}
-            minDistance={0.1}
-            maxDistance={2}
-            enableDamping
-            dampingFactor={0.12}
-          />
+          <CinematicCamera active={phase === 'descent'} onDone={() => setPhase('sky')} />
+          {phase === 'sky' && (
+            <OrbitControls
+              enablePan={false}
+              enableZoom
+              rotateSpeed={-0.4}
+              minDistance={0.1}
+              maxDistance={2}
+              enableDamping
+              dampingFactor={0.12}
+            />
+          )}
         </Canvas>
       )}
 

@@ -1,0 +1,43 @@
+{
+  "sheetsById": {
+    "Reveal": {
+      "staticOverrides": { "byObject": {} },
+      "sequence": {
+        "type": "PositionalSequence",
+        "length": 3,
+        "subUnitsPerUnit": 30,
+        "tracksByObject": {
+          "Camera": {
+            "trackData": {
+              "track-progress": {
+                "type": "BasicKeyframedTrack",
+                "__debugName": "Camera:[\"progress\"]",
+                "keyframes": [
+                  {
+                    "id": "kf-start",
+                    "position": 0,
+                    "connectedRight": true,
+                    "handles": [0.5, 0, 0.25, 0.1],
+                    "type": "bezier",
+                    "value": 0
+                  },
+                  {
+                    "id": "kf-end",
+                    "position": 3,
+                    "connectedRight": false,
+                    "handles": [0.75, 0.9, 0.5, 1],
+                    "type": "bezier",
+                    "value": 1
+                  }
+                ]
+              }
+            },
+            "trackIdByPropPath": { "[\"progress\"]": "track-progress" }
+          }
+        }
+      }
+    }
+  },
+  "definitionVersion": "0.4.0",
+  "revisionHistory": []
+}
