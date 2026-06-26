@@ -19,29 +19,22 @@ export function LayerControls({
   setLayers: (l: Layers) => void;
 }) {
   return (
-    <details className="group absolute left-4 top-16 z-20 sm:left-6 sm:top-20" open>
-      <summary className="label flex w-44 cursor-pointer list-none items-center justify-between border border-[var(--border-visible)] bg-[var(--surface)] px-3 py-2 text-[var(--text-primary)]">
-        <span>Layers</span>
-        <span className="text-[var(--text-disabled)] group-open:rotate-180">▾</span>
-      </summary>
-      <div className="w-44 border border-t-0 border-[var(--border-visible)] bg-[var(--surface)]">
-        {ITEMS.map((it) => (
-          <button
-            key={it.key}
-            onClick={() => setLayers({ ...layers, [it.key]: !layers[it.key] })}
-            className="flex w-full items-center justify-between px-3 py-2 text-left font-mono text-[12px] text-[var(--text-secondary)] transition-colors hover:text-white"
-          >
-            <span>{it.label}</span>
-            <span
-              className={
-                layers[it.key] ? 'text-[var(--success)]' : 'text-[var(--text-disabled)]'
-              }
-            >
-              {layers[it.key] ? '●' : '○'}
-            </span>
-          </button>
-        ))}
+    <div className="flex flex-col">
+      <div className="border-b border-[var(--border)] px-4 py-3">
+        <span className="label text-[var(--text-primary)]">Layers</span>
       </div>
-    </details>
+      {ITEMS.map((it) => (
+        <button
+          key={it.key}
+          onClick={() => setLayers({ ...layers, [it.key]: !layers[it.key] })}
+          className="flex w-full items-center justify-between border-b border-[var(--border)] px-4 py-2 text-left font-mono text-[12px] text-[var(--text-secondary)] transition-colors hover:text-white"
+        >
+          <span>{it.label}</span>
+          <span className={layers[it.key] ? 'text-[var(--success)]' : 'text-[var(--text-disabled)]'}>
+            {layers[it.key] ? '●' : '○'}
+          </span>
+        </button>
+      ))}
+    </div>
   );
 }

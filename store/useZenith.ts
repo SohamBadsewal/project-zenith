@@ -36,7 +36,7 @@ export const useZenith = create<ZenithStore>((set) => ({
   pending: null,
   time: nowSimTime(),
   selectionId: null,
-  viewMode: 'freeroam',
+  viewMode: 'static',
   sky: null,
 
   setPhase: (phase) => set({ phase }),
@@ -61,7 +61,7 @@ export const useZenith = create<ZenithStore>((set) => ({
       observer: null,
       pending: null,
       selectionId: null,
-      viewMode: 'freeroam',
+      viewMode: 'static',
       sky: null,
       time: nowSimTime(),
     }),

@@ -1,7 +1,13 @@
 # Project Zenith — Progress
 
 ## Current Status
-SkyView Lite overhaul COMPLETE & verified. Dome removed; dual camera; planet spheres; proximity reticle; decluttered stars; proximity-gated constellations.
+SkyView Lite overhaul COMPLETE & verified. Static view default on load; left sidebar drawer (Layers + Overhead Now); dome removed; dual camera; planet spheres; proximity reticle; decluttered stars; proximity-gated constellations.
+
+## Latest (UI pass — impeccable skill)
+- [x] Default viewMode='static' (load shows fixed south+45° framing from the observer's location); Free Roam on toggle
+- [x] Left Sidebar drawer houses Layers + Overhead Now, collapsible (☰/✕), slide animation w/ reduced-motion fallback; semantic z-index (crosshair 10 < drawer 30 < floating controls 40)
+- [x] OverheadPanel + LayerControls refactored to embeddable (no absolute positioning); back button → top-right, share → bottom-right
+- [x] Verified live: static default, drawer slide -320↔0, both panels present, no console errors, screenshot captured
 
 ## Just Completed
 - [x] Store: `viewMode: 'static'|'freeroam'` + `setViewMode`

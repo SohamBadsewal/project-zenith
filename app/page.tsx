@@ -15,9 +15,8 @@ import { StaticCamera } from '@/components/scene/StaticCamera';
 import { Hud } from '@/components/ui/Hud';
 import { LocationCard } from '@/components/ui/LocationCard';
 import { SearchBar } from '@/components/ui/SearchBar';
-import { LayerControls } from '@/components/ui/LayerControls';
+import { Sidebar } from '@/components/ui/Sidebar';
 import { ViewModeToggle } from '@/components/ui/ViewModeToggle';
-import { OverheadPanel } from '@/components/ui/OverheadPanel';
 import { formatLatLon } from '@/lib/geo';
 import { buildShareHash, parseShareHash } from '@/lib/shareUrl';
 
@@ -187,19 +186,19 @@ export default function Page() {
         <>
           <button
             onClick={goBack}
-            className="absolute left-4 top-4 z-20 flex h-10 w-10 items-center justify-center border border-[var(--border-visible)] bg-[var(--surface)] font-mono text-[var(--text-primary)] sm:left-6 sm:top-6"
+            className="absolute right-4 top-4 z-40 flex h-10 w-10 items-center justify-center border border-[var(--border-visible)] bg-[var(--surface)] font-mono text-[var(--text-primary)] transition-colors hover:text-white sm:right-6 sm:top-6"
             aria-label="Back to globe"
           >
             ‹
           </button>
 
           {observer && (
-            <div className="absolute left-16 top-4 z-20 font-mono text-[12px] text-[var(--text-secondary)] sm:left-20 sm:top-7">
+            <div className="absolute left-16 top-4 z-40 font-mono text-[12px] text-[var(--text-secondary)] sm:left-20 sm:top-7">
               ◐ {observer.placeName ?? formatLatLon(observer.latDeg, observer.lonDeg)}
             </div>
           )}
 
-          <LayerControls layers={layers} setLayers={setLayers} />
+          <Sidebar layers={layers} setLayers={setLayers} data={sky} selectionId={selectionId} onSelect={select} />
           <ViewModeToggle />
 
           <div className="pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
@@ -209,12 +208,11 @@ export default function Page() {
 
           <button
             onClick={copyShareLink}
-            className="absolute bottom-6 left-4 z-20 flex h-8 items-center gap-1.5 border border-[var(--border-visible)] bg-[var(--surface)] px-3 font-mono text-[11px] text-[var(--text-secondary)] transition-colors hover:text-white sm:left-6 sm:bottom-8"
+            className="absolute bottom-8 right-4 z-40 flex h-8 items-center gap-1.5 border border-[var(--border-visible)] bg-[var(--surface)] px-3 font-mono text-[11px] text-[var(--text-secondary)] transition-colors hover:text-white sm:right-6"
             title="Copy shareable link to this sky view"
           >
             {copied ? '✓ COPIED' : '⬡ SHARE SKY'}
           </button>
-          <OverheadPanel data={sky} selectionId={selectionId} onSelect={select} />
         </>
       )}
     </main>

@@ -67,7 +67,7 @@ export function OverheadPanel({
   const satCount = data.satellites.filter((s) => s.aboveHorizon).length;
 
   return (
-    <div className="absolute right-4 top-4 z-20 flex max-h-[70vh] w-[260px] max-w-[calc(100vw-2rem)] flex-col border border-[var(--border)] bg-[var(--surface)] sm:right-6 sm:top-6">
+    <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3">
         <span className="label text-[var(--text-primary)]">Overhead now</span>
         <span
