@@ -2,23 +2,11 @@
 
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { useTexture } from '@react-three/drei';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import gsap from 'gsap';
 import { pickLocation, latLonToUnitVector } from '@/lib/geo';
 import { useZenith } from '@/store/useZenith';
-
-const MAPTILER_TILE = '/api/maptiler/tiles?kind=satellite-v4&z=0&x=0&y=0';
-const FALLBACK_TEXTURE = '/textures/earth_day.jpg';
-
-async function resolveTileUrl(): Promise<string> {
-  try {
-    const r = await fetch(MAPTILER_TILE, { method: 'HEAD' });
-    return r.ok ? MAPTILER_TILE : FALLBACK_TEXTURE;
-  } catch {
-    return FALLBACK_TEXTURE;
-  }
-}
 
 const GLOBE_RADIUS = 1;
 
@@ -47,10 +35,7 @@ export function Globe() {
   const observer = useZenith((s) => s.observer);
   const pick = useZenith((s) => s.pickLocation);
 
-  const [texUrl, setTexUrl] = useState(FALLBACK_TEXTURE);
-  useEffect(() => { resolveTileUrl().then(setTexUrl); }, []);
-
-  const dayMap = useTexture(texUrl, (t) => {
+  const dayMap = useTexture('/textures/earth_day.jpg', (t) => {
     (t as THREE.Texture).colorSpace = THREE.SRGBColorSpace;
   });
 

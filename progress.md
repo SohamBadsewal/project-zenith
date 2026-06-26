@@ -1,15 +1,14 @@
 # Project Zenith — Progress
 
 ## Current Status
-Phase 2B complete. All phases shipped: MapTiler proxy → Globe → GSAP transition → SkyPlanetarium → Bloom → GLB satellites.
+Phase 5 complete. Globe reverted to static equirectangular earth_day.jpg (MapTiler single-tile texture dropped — Web Mercator z0 tile distorted the sphere UV + shifted lat/lon).
 
 ## Just Completed
 - [x] fix: satellite.js v7 → v6.0.2 (pure-JS SGP4, no WASM node: imports) + pinned to `next build --webpack` — build-hang resolved, 48/48 tests pass
-- [x] Phase 2B: Globe.tsx uses MapTiler satellite tile via proxy (`/api/maptiler/tiles?kind=satellite-v4&z=0&x=0&y=0`) with earth_day.jpg fallback when key unset
-- [x] MapTiler ToS attribution added to globe UI (`© MapTiler © OpenStreetMap`)
+- [x] Reverted Globe texture to static /textures/earth_day.jpg (correct equirectangular mapping, no coordinate mismatch). MapTiler globe-texture attempt + attribution removed.
 
 ## Current Blockers/Bugs
-None. Build clean. Tests 48/48. All routes live.
+- MapTiler raster tiles are Web Mercator (per-tile XYZ) — a single tile cannot texture an equirectangular sphere. Proper use needs either per-tile-mesh LOD or an equirectangular source. Globe stays on static texture.
 
 ## Next Immediate Task
-Optional polish: multi-tile LOD globe texture (z≥2 stitched), MVT building InstancedMesh at z≥14, or snap-camera/zoom-LOD for satellites.
+Globe is stable on the static texture. MapTiler proxy routes remain for geocoding search (Phase 2A) only. Optional: snap-camera/zoom-LOD for satellites.

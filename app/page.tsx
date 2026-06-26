@@ -178,9 +178,6 @@ export default function Page() {
           <Hud />
           <SearchBar />
           <LocationCard />
-          <div className="pointer-events-none absolute bottom-2 right-2 z-20 font-mono text-[10px] text-[var(--text-secondary)] opacity-60">
-            © <a className="pointer-events-auto underline" href="https://www.maptiler.com/copyright/" target="_blank" rel="noreferrer">MapTiler</a> © <a className="pointer-events-auto underline" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> contributors
-          </div>
         </>
       )}
 
