@@ -11,10 +11,12 @@ import { Globe } from '@/components/scene/Globe';
 import { Starfield } from '@/components/scene/Starfield';
 import { SkyPlanetarium, type Layers } from '@/components/scene/SkyPlanetarium';
 import { TransitionRig } from '@/components/scene/TransitionRig';
+import { StaticCamera } from '@/components/scene/StaticCamera';
 import { Hud } from '@/components/ui/Hud';
 import { LocationCard } from '@/components/ui/LocationCard';
 import { SearchBar } from '@/components/ui/SearchBar';
 import { LayerControls } from '@/components/ui/LayerControls';
+import { ViewModeToggle } from '@/components/ui/ViewModeToggle';
 import { OverheadPanel } from '@/components/ui/OverheadPanel';
 import { formatLatLon } from '@/lib/geo';
 import { buildShareHash, parseShareHash } from '@/lib/shareUrl';
@@ -33,6 +35,7 @@ export default function Page() {
   const selectionId = useZenith((s) => s.selectionId);
   const select = useZenith((s) => s.select);
   const setPhase = useZenith((s) => s.setPhase);
+  const viewMode = useZenith((s) => s.viewMode);
   const time = useZenith((s) => s.time);
 
   const [mounted, setMounted] = useState(false);
@@ -128,12 +131,11 @@ export default function Page() {
     <main className="relative h-screen w-screen overflow-hidden bg-black">
       {mounted && (
         <Canvas camera={{ position: [0, 0, 3], fov: 45 }}>
-          <ambientLight intensity={0.6} />
-          <directionalLight position={[5, 3, 5]} intensity={2.2} />
-          <directionalLight position={[-5, -3, -5]} intensity={0.4} />
-
           {showGlobe && (
             <>
+              <ambientLight intensity={0.6} />
+              <directionalLight position={[5, 3, 5]} intensity={2.2} />
+              <directionalLight position={[-5, -3, -5]} intensity={0.4} />
               <Starfield />
               <Globe />
             </>
@@ -141,7 +143,6 @@ export default function Page() {
 
           {showSky && (
             <>
-              <Starfield count={1500} radius={60} />
               <SkyPlanetarium data={sky} layers={layers} selectionId={selectionId} onSelect={select} />
               <EffectComposer>
                 <Bloom luminanceThreshold={0.3} luminanceSmoothing={0.85} intensity={0.7} radius={0.5} mipmapBlur />
@@ -154,7 +155,8 @@ export default function Page() {
           {phase === 'globe' && (
             <OrbitControls makeDefault enablePan={false} minDistance={1.4} maxDistance={5} enableDamping />
           )}
-          {phase === 'sky' && (
+          {phase === 'sky' && viewMode === 'static' && <StaticCamera />}
+          {phase === 'sky' && viewMode === 'freeroam' && (
             <OrbitControls
               makeDefault
               enablePan={false}
@@ -198,6 +200,12 @@ export default function Page() {
           )}
 
           <LayerControls layers={layers} setLayers={setLayers} />
+          <ViewModeToggle />
+
+          <div className="pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
+            <div className="h-6 w-6 rounded-full border border-white/40" />
+            <div className="absolute left-1/2 top-1/2 h-[3px] w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/70" />
+          </div>
 
           <button
             onClick={copyShareLink}

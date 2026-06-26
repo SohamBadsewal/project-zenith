@@ -45,20 +45,17 @@ export function InstancedStars({
 }) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
 
-  // Only above-horizon stars are rendered.
-  const visibleStars = useMemo(() => stars.filter((s) => s.aboveHorizon), [stars]);
+  const visibleStars = useMemo(() => stars, [stars]);
   const count = visibleStars.length;
 
-  // Build the instance matrices + colors once per data change.
   useEffect(() => {
     const mesh = meshRef.current;
     if (!mesh) return;
 
     visibleStars.forEach((s, i) => {
       const [x, y, z] = altAzToVec3(s.altDeg, s.azDeg, DOME_R);
-      // Brighter stars (lower magnitude) render slightly larger.
       const mag = s.magnitude ?? 6;
-      const scale = STAR_SIZE * (1 + Math.max(0, 2.5 - mag) * 0.4);
+      const scale = STAR_SIZE * Math.max(0.35, (6 - mag) / 3);
       _matrix.makeScale(scale, scale, scale).setPosition(x, y, z);
       mesh.setMatrixAt(i, _matrix);
 

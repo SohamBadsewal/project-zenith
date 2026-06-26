@@ -1,14 +1,22 @@
 # Project Zenith — Progress
 
 ## Current Status
-Phase 5 complete. Globe reverted to static equirectangular earth_day.jpg (MapTiler single-tile texture dropped — Web Mercator z0 tile distorted the sphere UV + shifted lat/lon).
+SkyView Lite overhaul COMPLETE & verified. Dome removed; dual camera; planet spheres; proximity reticle; decluttered stars; proximity-gated constellations.
 
 ## Just Completed
-- [x] fix: satellite.js v7 → v6.0.2 (pure-JS SGP4, no WASM node: imports) + pinned to `next build --webpack` — build-hang resolved, 48/48 tests pass
-- [x] Reverted Globe texture to static /textures/earth_day.jpg (correct equirectangular mapping, no coordinate mismatch). MapTiler globe-texture attempt + attribution removed.
+- [x] Store: `viewMode: 'static'|'freeroam'` + `setViewMode`
+- [x] Dome removed (no horizon/altitude rings, cardinals, zenith marker); full 360° sphere (dropped aboveHorizon filters)
+- [x] PlanetModel: textured NASA-map spheres + Saturn ring + procedural fallback, lit by real sun direction (SunLight)
+- [x] InstancedStars: full sphere + brightness sizing; random Starfield removed from sky phase
+- [x] ProximityReticle: center-crosshair raycast → focus → lerp scale-up + drei <Html> fade-in card (+ star ring)
+- [x] Constellations: extracted, fade in only near reticle centroid (fixed Serpens `Ser` duplicate-id key bug)
+- [x] Dual camera: ViewModeToggle (right) + StaticCamera (south+45°, FOV55) vs OrbitControls
+- [x] scripts/prepare-models.mjs (8 planet textures fetched) + `npm run prepare:models`
+- [x] docs/super_power.md + project brain/memory written
+- [x] tsc clean · 48/48 tests · build OK · live preview: no console errors, toggle works, textures 200
 
 ## Current Blockers/Bugs
-- MapTiler raster tiles are Web Mercator (per-tile XYZ) — a single tile cannot texture an equirectangular sphere. Proper use needs either per-tile-mesh LOD or an equirectangular source. Globe stays on static texture.
+- Preview screenshots intermittently time out on this GPU (verified via console + DOM eval instead).
 
 ## Next Immediate Task
-Globe is stable on the static texture. MapTiler proxy routes remain for geocoding search (Phase 2A) only. Optional: snap-camera/zoom-LOD for satellites.
+Commit the overhaul. Optional polish: constellation art overlays (textures), star-instance focus scaling, planet ring texture.

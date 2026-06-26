@@ -5,6 +5,7 @@ import { nowSimTime, clampScrub } from '@/lib/time';
 
 export type Phase = 'landing' | 'warp' | 'globe' | 'descent' | 'sky';
 export type Status = 'idle' | 'loading' | 'live' | 'offlineData' | 'error';
+export type ViewMode = 'static' | 'freeroam';
 
 export interface ZenithStore {
   phase: Phase;
@@ -13,6 +14,7 @@ export interface ZenithStore {
   pending: ObserverLocation | null; // picked but not yet confirmed (drives the card)
   time: SimTime;
   selectionId: string | null; // highlighted object in the sky view
+  viewMode: ViewMode;
   sky: SkyState | null;
 
   setPhase: (p: Phase) => void;
@@ -21,6 +23,7 @@ export interface ZenithStore {
   clearPending: () => void;
   setScrubOffset: (ms: number) => void;
   select: (id: string | null) => void;
+  setViewMode: (m: ViewMode) => void;
   setSky: (s: SkyState) => void;
   setStatus: (s: Status) => void;
   reset: () => void;
@@ -33,6 +36,7 @@ export const useZenith = create<ZenithStore>((set) => ({
   pending: null,
   time: nowSimTime(),
   selectionId: null,
+  viewMode: 'freeroam',
   sky: null,
 
   setPhase: (phase) => set({ phase }),
@@ -47,6 +51,7 @@ export const useZenith = create<ZenithStore>((set) => ({
   setScrubOffset: (ms) =>
     set((s) => ({ time: { ...s.time, scrubOffsetMs: clampScrub(ms) } })),
   select: (selectionId) => set({ selectionId }),
+  setViewMode: (viewMode) => set({ viewMode }),
   setSky: (sky) => set({ sky }),
   setStatus: (status) => set({ status }),
   reset: () =>
@@ -56,6 +61,7 @@ export const useZenith = create<ZenithStore>((set) => ({
       observer: null,
       pending: null,
       selectionId: null,
+      viewMode: 'freeroam',
       sky: null,
       time: nowSimTime(),
     }),
