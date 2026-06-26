@@ -1,15 +1,17 @@
 # Project Zenith — Progress
 
 ## Current Status
-Part A · Verification Gate — 6/7 GREEN. A3 `next build` confirmed environmentally hung (not a code defect).
+Phase 3 COMPLETE + verified. Single-canvas GSAP globe→sky cinematic transition working end-to-end.
 
 ## Just Completed
-- [x] A1 tsc 0 · A2 48/48 · A4 key · A5 tiles · A6 geocode · A7 sky runtime
-- [x] Diagnosed A3: `next build` hangs (~0 CPU, no artifacts, default config) — reproduces earlier 10/11 AM zombie builds
-- [x] Stopped + killed the hung build; slate clean (0 build procs)
+- [x] Merged two-Canvas → single `<Canvas>`; `TransitionRig.tsx` drives one camera
+- [x] descent: GSAP camera dolly + FOV; CSS dip-to-black (compositor, starvation-proof); setTimeout phase advance
+- [x] Diagnosed + fixed: original stall (rAF-gated advance + mid-descent sky mount) and overlay clobber (React inline-style reset)
+- [x] Browser-verified: landing→globe→search/fly→confirm→descent→sky→back→globe; correct location; no console errors
 
 ## Current Blockers/Bugs
-- `next build` reliably hangs in this environment (Windows + Next 16). `next dev` works fine. Blocks deploy/CI, NOT local dev or Phase 2.
+- Perf caveat: `useSky` cold recompute saturates main thread on this slow machine (transition jank, masked by the black dip). Not blocking.
+- `next build` env hang still outstanding (deploy/CI only).
 
 ## Next Immediate Task
-User decision: proceed to Phase 2A (dev works, code verified) OR diagnose the build hang first.
+Commit Phase 3; await direction (Phase 5 cinematic GLB / Phase 2B / useSky perf / build hang).

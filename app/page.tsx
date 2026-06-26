@@ -3,12 +3,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
+import gsap from 'gsap';
 import { useZenith } from '@/store/useZenith';
 import { useSky } from '@/hooks/useSky';
 import { Globe } from '@/components/scene/Globe';
 import { Starfield } from '@/components/scene/Starfield';
 import { SkyPlanetarium, type Layers } from '@/components/scene/SkyPlanetarium';
-import { CinematicCamera } from '@/components/scene/CinematicCamera';
+import { TransitionRig } from '@/components/scene/TransitionRig';
 import { Hud } from '@/components/ui/Hud';
 import { LocationCard } from '@/components/ui/LocationCard';
 import { SearchBar } from '@/components/ui/SearchBar';
@@ -38,10 +39,11 @@ export default function Page() {
   const [copied, setCopied] = useState(false);
   const sky = useSky();
   const hashWritten = useRef(false);
+  const tRef = useRef(0);
+  const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => setMounted(true), []);
 
-  // Restore sky state from URL hash on first mount.
   useEffect(() => {
     if (!mounted) return;
     const params = parseShareHash(window.location.hash);
@@ -54,14 +56,35 @@ export default function Page() {
         source: 'globe',
       },
       phase: 'sky',
-      time: {
-        liveEpochMs: params.epochMs,
-        scrubOffsetMs: 0,
-      },
+      time: { liveEpochMs: params.epochMs, scrubOffsetMs: 0 },
     });
   }, [mounted]);
 
-  // Write hash when entering sky phase.
+  useEffect(() => {
+    if (phase !== 'descent') return;
+    tRef.current = 0;
+    const proxy = { t: 0 };
+    const tween = gsap.to(proxy, {
+      t: 1,
+      duration: 1.4,
+      ease: 'power2.in',
+      onUpdate: () => {
+        tRef.current = proxy.t;
+      },
+    });
+    if (overlayRef.current) overlayRef.current.style.opacity = '1';
+    const done = setTimeout(() => setPhase('sky'), 1400);
+    return () => {
+      tween.kill();
+      clearTimeout(done);
+    };
+  }, [phase, setPhase]);
+
+  useEffect(() => {
+    if (phase !== 'sky') return;
+    if (overlayRef.current) overlayRef.current.style.opacity = '0';
+  }, [phase]);
+
   useEffect(() => {
     if (phase !== 'sky' || !observer) return;
     if (hashWritten.current) return;
@@ -70,19 +93,16 @@ export default function Page() {
     window.location.hash = buildShareHash(observer.latDeg, observer.lonDeg, epochMs).slice(1);
   }, [phase, observer, time]);
 
-  // Reset hash flag on leaving sky.
   useEffect(() => {
     if (phase !== 'sky') hashWritten.current = false;
   }, [phase]);
 
-  // The 'descent' phase is the cinematic reveal window; CinematicCamera flies
-  // the camera into the sphere and calls setPhase('sky') when it completes.
-  // (Shared-link restores set phase straight to 'sky', skipping the reveal.)
-
-  const inSky = phase === 'sky' || phase === 'descent';
+  const showGlobe = phase === 'landing' || phase === 'globe' || phase === 'descent';
+  const showSky = phase === 'sky';
 
   const goBack = () => {
     window.location.hash = '';
+    if (overlayRef.current) overlayRef.current.style.opacity = '0';
     useZenith.setState({
       phase: 'globe',
       observer: null,
@@ -105,24 +125,34 @@ export default function Page() {
 
   return (
     <main className="relative h-screen w-screen overflow-hidden bg-black">
-      {mounted && !inSky && (
+      {mounted && (
         <Canvas camera={{ position: [0, 0, 3], fov: 45 }}>
           <ambientLight intensity={0.6} />
           <directionalLight position={[5, 3, 5]} intensity={2.2} />
           <directionalLight position={[-5, -3, -5]} intensity={0.4} />
-          <Starfield />
-          <Globe />
-          <OrbitControls enablePan={false} minDistance={1.4} maxDistance={5} enableDamping />
-        </Canvas>
-      )}
 
-      {mounted && inSky && (
-        <Canvas camera={{ position: [0, 0, 0.1], fov: 70 }}>
-          <Starfield count={1500} radius={60} />
-          <SkyPlanetarium data={sky} layers={layers} selectionId={selectionId} onSelect={select} />
-          <CinematicCamera active={phase === 'descent'} onDone={() => setPhase('sky')} />
+          {showGlobe && (
+            <>
+              <Starfield />
+              <Globe />
+            </>
+          )}
+
+          {showSky && (
+            <>
+              <Starfield count={1500} radius={60} />
+              <SkyPlanetarium data={sky} layers={layers} selectionId={selectionId} onSelect={select} />
+            </>
+          )}
+
+          <TransitionRig phase={phase} tRef={tRef} />
+
+          {phase === 'globe' && (
+            <OrbitControls makeDefault enablePan={false} minDistance={1.4} maxDistance={5} enableDamping />
+          )}
           {phase === 'sky' && (
             <OrbitControls
+              makeDefault
               enablePan={false}
               enableZoom
               rotateSpeed={-0.4}
@@ -135,24 +165,20 @@ export default function Page() {
         </Canvas>
       )}
 
-      {/* ── Globe-phase chrome ── */}
-      {!inSky && (
+      <div ref={overlayRef} className="pointer-events-none absolute inset-0 z-40 bg-black opacity-0 transition-opacity duration-1000 ease-in-out" />
+
+      {phase === 'landing' && <LandingHero onStart={() => setPhase('globe')} />}
+
+      {phase === 'globe' && (
         <>
-          {phase === 'landing' && <LandingHero onStart={() => setPhase('globe')} />}
-          {phase === 'globe' && (
-            <>
-              <Hud />
-              <SearchBar />
-              <LocationCard />
-            </>
-          )}
+          <Hud />
+          <SearchBar />
+          <LocationCard />
         </>
       )}
 
-      {/* ── Sky-phase chrome ── */}
-      {inSky && (
+      {phase === 'sky' && (
         <>
-          {/* Back button */}
           <button
             onClick={goBack}
             className="absolute left-4 top-4 z-20 flex h-10 w-10 items-center justify-center border border-[var(--border-visible)] bg-[var(--surface)] font-mono text-[var(--text-primary)] sm:left-6 sm:top-6"
@@ -161,7 +187,6 @@ export default function Page() {
             ‹
           </button>
 
-          {/* Location label */}
           {observer && (
             <div className="absolute left-16 top-4 z-20 font-mono text-[12px] text-[var(--text-secondary)] sm:left-20 sm:top-7">
               ◐ {observer.placeName ?? formatLatLon(observer.latDeg, observer.lonDeg)}
@@ -170,7 +195,6 @@ export default function Page() {
 
           <LayerControls layers={layers} setLayers={setLayers} />
 
-          {/* Share link button — bottom-left, away from LayerControls */}
           <button
             onClick={copyShareLink}
             className="absolute bottom-6 left-4 z-20 flex h-8 items-center gap-1.5 border border-[var(--border-visible)] bg-[var(--surface)] px-3 font-mono text-[11px] text-[var(--text-secondary)] transition-colors hover:text-white sm:left-6 sm:bottom-8"
