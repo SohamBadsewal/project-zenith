@@ -10,6 +10,7 @@ import { useSky } from '@/hooks/useSky';
 import { Globe } from '@/components/scene/Globe';
 import { Starfield } from '@/components/scene/Starfield';
 import { SkyPlanetarium, type Layers, type FocusInfo } from '@/components/scene/SkyPlanetarium';
+import { DetailPanel } from '@/components/ui/DetailPanel';
 import { TransitionRig } from '@/components/scene/TransitionRig';
 import { StaticCamera } from '@/components/scene/StaticCamera';
 import { Hud } from '@/components/ui/Hud';
@@ -208,17 +209,7 @@ export default function Page() {
             <div className="absolute left-1/2 top-1/2 h-[3px] w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/70" />
           </div>
 
-          {focusInfo && (
-            <div key={focusInfo.id} className="pointer-events-none absolute bottom-10 left-6 z-30 max-w-[min(80vw,420px)] animate-[fadeUp_.35s_ease] sm:left-8">
-              <div className="font-sans text-3xl font-medium leading-tight text-[var(--interactive)] sm:text-4xl">
-                {focusInfo.name}
-              </div>
-              <div className="mt-1 font-mono text-[13px] text-[var(--text-secondary)]">{focusInfo.subtitle}</div>
-              {focusInfo.blurb && (
-                <div className="mt-2 font-mono text-[12px] leading-relaxed text-[var(--text-disabled)]">{focusInfo.blurb}</div>
-              )}
-            </div>
-          )}
+          <DetailPanel info={focusInfo} />
 
           <button
             onClick={copyShareLink}
