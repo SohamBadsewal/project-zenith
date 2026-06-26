@@ -1,6 +1,7 @@
 'use client';
 
-import { useRef } from 'react';
+import { Suspense, useMemo, useRef, Component, type ReactNode } from 'react';
+import { useGLTF } from '@react-three/drei';
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
 
@@ -8,6 +9,32 @@ const PANEL = '#16306b';
 const BODY = '#d4d8de';
 const TRUSS = '#9aa0a6';
 const GOLD = '#caa24a';
+const ISS_GLB = '/models/iss.glb';
+
+class GltfBoundary extends Component<{ fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  render() {
+    return this.state.failed ? this.props.fallback : this.props.children;
+  }
+}
+
+function GltfModel({ url }: { url: string }) {
+  const { scene } = useGLTF(url, '/draco/');
+  const obj = useMemo(() => {
+    const c = scene.clone(true);
+    const box = new THREE.Box3().setFromObject(c);
+    const size = box.getSize(new THREE.Vector3());
+    const max = Math.max(size.x, size.y, size.z) || 1;
+    c.scale.multiplyScalar(2 / max);
+    box.setFromObject(c);
+    c.position.sub(box.getCenter(new THREE.Vector3()));
+    return c;
+  }, [scene]);
+  return <primitive object={obj} />;
+}
 
 export function SatModel({
   iss,
@@ -20,9 +47,18 @@ export function SatModel({
   useFrame((_, dt) => {
     if (ref.current) ref.current.rotation.y += dt * 0.45;
   });
+  const proc = iss ? <IssBody /> : <GenericSat />;
   return (
     <group ref={ref} scale={iss ? 0.85 : 0.5} onClick={onClick}>
-      {iss ? <IssBody /> : <GenericSat />}
+      {iss ? (
+        <GltfBoundary fallback={proc}>
+          <Suspense fallback={proc}>
+            <GltfModel url={ISS_GLB} />
+          </Suspense>
+        </GltfBoundary>
+      ) : (
+        proc
+      )}
     </group>
   );
 }
@@ -53,18 +89,16 @@ function IssBody() {
         <meshStandardMaterial color={GOLD} metalness={0.6} roughness={0.4} />
       </mesh>
       {wings.map(([x, z]) => (
-        <group key={`${x}-${z}`} position={[x, 0, z]}>
-          <mesh>
-            <boxGeometry args={[0.62, 0.01, 0.3]} />
-            <meshStandardMaterial
-              color={PANEL}
-              metalness={0.5}
-              roughness={0.25}
-              emissive={PANEL}
-              emissiveIntensity={0.25}
-            />
-          </mesh>
-        </group>
+        <mesh key={`${x}-${z}`} position={[x, 0, z]}>
+          <boxGeometry args={[0.62, 0.01, 0.3]} />
+          <meshStandardMaterial
+            color={PANEL}
+            metalness={0.5}
+            roughness={0.25}
+            emissive={PANEL}
+            emissiveIntensity={0.25}
+          />
+        </mesh>
       ))}
     </group>
   );

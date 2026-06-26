@@ -59,9 +59,10 @@
 ## Phase 5 — Cinematic GLB + bloom (in progress)
 - [x] 5A selective bloom (`EffectComposer` + `Bloom`, luminance threshold; UI stays crisp) — committed `e373780`, verified
 - [x] 5B `SatMarker→SatModel` LOD swap (`SatModel.tsx` procedural ISS + generic sat; selected → rotating 3D model) — verified: selection + swap + no console errors
-- [x] Draco decoder staged → `/public/draco` (real-GLB drop-in ready)
-- [ ] Real NASA ISS/Hubble `.glb` + `scripts/prepare-models.mjs` (external asset — network + Draco tooling)
-- [ ] Zoom-triggered LOD (currently click/select-triggered); Hubble-specific model; snap-camera to selected sat
+- [x] Draco decoder staged → `/public/draco`
+- [x] SatModel GLB-ready: `useGLTF('/models/iss.glb','/draco/')` + bbox-normalize + ErrorBoundary→procedural fallback (auto-loads when a `.glb` is dropped in `/public/models`)
+- [ ] User drops a license-vetted NASA ISS `.glb` at `/public/models/iss.glb` (Hubble variant + `scripts/prepare-models.mjs` optional)
+- [ ] Zoom-triggered LOD (currently click/select-triggered); snap-camera to selected sat
 
 ## Deferred
 - Phase 2B local MapTiler terrain+buildings patch

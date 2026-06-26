@@ -1,17 +1,16 @@
 # Project Zenith — Progress
 
 ## Current Status
-Phase 5 in progress: 5A bloom committed; 5B LOD swap done + functionally verified. Real-GLB asset pipeline remains.
+Phase 5 substantially complete: 5A bloom + 5B LOD swap shipped; SatModel now GLB-ready (drop-in iss.glb auto-loads).
 
 ## Just Completed
-- [x] 5A selective bloom — committed e373780 (stars/planets glow by brightness, B-V color kept, UI crisp)
-- [x] 5B SatModel.tsx (procedural ISS + generic sat) + LOD swap in SkyPlanetarium (selected → 3D model)
-- [x] Draco decoder copied to /public/draco (real-GLB drop-in ready); tsc green
-- [x] Verified 5B: OverheadPanel select highlights + swaps; no console errors; orbit/drag works
+- [x] SatModel: useGLTF('/models/iss.glb','/draco/') + bbox-normalize + ErrorBoundary→procedural fallback
+- [x] /public/models created (drop-in location); /public/draco decoder staged
+- [x] tsc green; verified app: sat select/deselect works, no console errors (procedural fallback active)
 
 ## Current Blockers/Bugs
-- Screenshot capture timing out late-session (GPU load; app fine per evals + clean console) — visual of model not captured, but logic verified.
+- Awaiting a license-vetted ISS .glb from user → /public/models/iss.glb (then real model auto-loads).
 - next build env hang (deploy/CI only).
 
 ## Next Immediate Task
-Commit 5B; then real NASA ISS/Hubble .glb + scripts/prepare-models.mjs (needs network/Draco tooling), or other direction.
+Commit GLB-ready SatModel. Then: real asset wiring on drop-in, or other direction (Phase 2B, build hang, snap-camera/zoom-LOD).
