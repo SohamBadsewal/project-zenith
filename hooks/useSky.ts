@@ -90,6 +90,18 @@ function projectConstellations(
   }));
 }
 
+function scheduleIdle(cb: () => void): number {
+  if (typeof requestIdleCallback === 'function') {
+    return requestIdleCallback(cb, { timeout: 1200 }) as unknown as number;
+  }
+  return setTimeout(cb, 0) as unknown as number;
+}
+
+function cancelIdle(h: number): void {
+  if (typeof cancelIdleCallback === 'function') cancelIdleCallback(h);
+  else clearTimeout(h);
+}
+
 export function useSky(): SkyData {
   const observer = useZenith((s) => s.observer);
   const time = useZenith((s) => s.time);
@@ -103,6 +115,7 @@ export function useSky(): SkyData {
   const starsRef = useRef<CelestialObject[]>([]);
   const constellationsRef = useRef<ProjectedConstellation[]>([]);
   const lastStarCompute = useRef(0);
+  const starPending = useRef(false);
 
   // Fetch TLEs once the observer is confirmed.
   useEffect(() => {
@@ -134,6 +147,26 @@ export function useSky(): SkyData {
       setData(EMPTY);
       return;
     }
+    let cancelled = false;
+    let idleHandle: number | null = null;
+
+    const scheduleStars = (obs: ObserverLocation) => {
+      if (starPending.current) return;
+      starPending.current = true;
+      idleHandle = scheduleIdle(() => {
+        starPending.current = false;
+        if (cancelled) return;
+        const d = new Date(effectiveEpochMs(useZenith.getState().time));
+        starsRef.current = computeStars(STARS, obs, d);
+        constellationsRef.current = projectConstellations(obs, d);
+        lastStarCompute.current = Date.now();
+        setData((prev) => ({
+          ...prev,
+          stars: starsRef.current,
+          constellations: constellationsRef.current,
+        }));
+      });
+    };
 
     const recompute = () => {
       const obs: ObserverLocation = observer;
@@ -142,14 +175,11 @@ export function useSky(): SkyData {
       const bodies = computeBodies(obs, date);
 
       if (Date.now() - lastStarCompute.current > STAR_TICK_MS || starsRef.current.length === 0) {
-        starsRef.current = computeStars(STARS, obs, date);
-        constellationsRef.current = projectConstellations(obs, date);
-        lastStarCompute.current = Date.now();
+        scheduleStars(obs);
       }
 
       let satellites = propagateAll(tlesRef.current, obs, date, prevElev.current);
       prevElev.current = new Map(satellites.map((s) => [s.noradId, s.elevationDeg]));
-      // Prioritise above-horizon, then cap for performance.
       satellites = satellites
         .filter((s) => s.aboveHorizon || s.name.includes('ISS'))
         .sort((a, b) => b.elevationDeg - a.elevationDeg)
@@ -165,7 +195,8 @@ export function useSky(): SkyData {
       const issTle = tlesRef.current.find((t) => t.noradId === ISS_NORAD);
       const issOrbit = issTle ? computeIssOrbit(issTle, obs, date) : [];
 
-      setData({
+      setData((prev) => ({
+        ...prev,
         bodies,
         stars: starsRef.current,
         satellites,
@@ -174,14 +205,18 @@ export function useSky(): SkyData {
         countAboveHorizon: sky.countAboveHorizon,
         dataMode: dataModeRef.current,
         issOrbit,
-      });
+      }));
       setSky(sky);
       setStatus(dataModeRef.current === 'live' ? 'live' : 'offlineData');
     };
 
     recompute();
     const id = setInterval(recompute, SAT_TICK_MS);
-    return () => clearInterval(id);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+      if (idleHandle != null) cancelIdle(idleHandle);
+    };
   }, [observer, time.scrubOffsetMs, setSky, setStatus]);
 
   return data;

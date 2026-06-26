@@ -60,4 +60,4 @@
 - Phase 5 NASA ISS/Hubble Draco GLB, `SatMarker→SatModel` LOD, selective B-V bloom
 - Phase 2B local MapTiler terrain+buildings patch
 - UI overlays §4.4 — `ObjectInfoOverlay`, `SidebarNav`, `ViewModeToggle`
-- Perf: `useSky` first recompute saturates main thread on slow machines (jank during transition; masked by black dip). Consider deferring/chunking the cold star compute.
+- [x] Perf: deferred cold star/constellation compute to `requestIdleCallback` — transition no longer saturates main thread (verified: black dip arc 0→1→0 smooth, eval runs real-time, stars populate post-dip)
