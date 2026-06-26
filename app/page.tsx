@@ -7,7 +7,7 @@ import { useZenith } from '@/store/useZenith';
 import { useSky } from '@/hooks/useSky';
 import { Globe } from '@/components/scene/Globe';
 import { Starfield } from '@/components/scene/Starfield';
-import { SkyDome, type Layers } from '@/components/scene/SkyDome';
+import { SkyPlanetarium, type Layers } from '@/components/scene/SkyPlanetarium';
 import { CinematicCamera } from '@/components/scene/CinematicCamera';
 import { Hud } from '@/components/ui/Hud';
 import { LocationCard } from '@/components/ui/LocationCard';
@@ -118,7 +118,7 @@ export default function Page() {
       {mounted && inSky && (
         <Canvas camera={{ position: [0, 0, 0.1], fov: 70 }}>
           <Starfield count={1500} radius={60} />
-          <SkyDome data={sky} layers={layers} selectionId={selectionId} onSelect={select} />
+          <SkyPlanetarium data={sky} layers={layers} selectionId={selectionId} onSelect={select} />
           <CinematicCamera active={phase === 'descent'} onDone={() => setPhase('sky')} />
           {phase === 'sky' && (
             <OrbitControls

@@ -1,6 +1,6 @@
 'use client';
 
-import type { Layers } from '@/components/scene/SkyDome';
+import type { Layers } from '@/components/scene/SkyPlanetarium';
 
 const ITEMS: Array<{ key: keyof Layers; label: string }> = [
   { key: 'stars', label: 'Stars' },

@@ -4,9 +4,9 @@ import { useMemo, useState } from 'react';
 import type { ThreeEvent } from '@react-three/fiber';
 import { Billboard, Html, Line, Text } from '@react-three/drei';
 import { altAzToVec3, horizonRing, altitudeRing } from '@/lib/dome';
-import { circlePointTexture } from '@/lib/pointTexture';
 import { satId, type SkyData, type IssOrbitPoint } from '@/hooks/useSky';
 import type { CelestialObject, SatelliteState } from '@/types';
+import { InstancedStars } from './InstancedStars';
 
 const DOME_R = 5;
 
@@ -25,19 +25,7 @@ const BODY_COLOR: Record<string, string> = {
   star: '#ffffff',
 };
 
-function starPositions(stars: CelestialObject[], minMag: number, maxMag: number) {
-  const pts: number[] = [];
-  for (const s of stars) {
-    if (!s.aboveHorizon) continue;
-    const mag = s.magnitude ?? 6;
-    if (mag < minMag || mag >= maxMag) continue;
-    const [x, y, z] = altAzToVec3(s.altDeg, s.azDeg, DOME_R);
-    pts.push(x, y, z);
-  }
-  return new Float32Array(pts);
-}
-
-export function SkyDome({
+export function SkyPlanetarium({
   data,
   layers,
   selectionId,
@@ -48,10 +36,18 @@ export function SkyDome({
   selectionId: string | null;
   onSelect: (id: string | null) => void;
 }) {
-  const brightStars = useMemo(() => starPositions(data.stars, -2, 2.5), [data.stars]);
-  const dimStars = useMemo(() => starPositions(data.stars, 2.5, 7), [data.stars]);
-  const starTex = useMemo(() => circlePointTexture(), []);
   const [hoverId, setHoverId] = useState<string | null>(null);
+  // Stars are now picked via InstancedStars; only star:* ids reach its selection.
+  const starSelection = selectionId?.startsWith('star:') ? selectionId : null;
+
+  const rings = useMemo(
+    () => ({
+      horizon: horizonRing(DOME_R),
+      alt30: altitudeRing(30, DOME_R),
+      alt60: altitudeRing(60, DOME_R),
+    }),
+    [],
+  );
 
   const enter = (id: string) => (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
@@ -63,15 +59,6 @@ export function SkyDome({
     setHoverId((cur) => (cur === id ? null : cur));
     document.body.style.cursor = '';
   };
-
-  const rings = useMemo(
-    () => ({
-      horizon: horizonRing(DOME_R),
-      alt30: altitudeRing(30, DOME_R),
-      alt60: altitudeRing(60, DOME_R),
-    }),
-    [],
-  );
 
   return (
     <group>
@@ -94,23 +81,13 @@ export function SkyDome({
         </Text>
       </Billboard>
 
-      {/* stars */}
-      {layers.stars && (
-        <>
-          <points>
-            <bufferGeometry>
-              <bufferAttribute attach="attributes-position" args={[dimStars, 3]} />
-            </bufferGeometry>
-            <pointsMaterial map={starTex} color="#cdd6f4" size={0.07} sizeAttenuation transparent opacity={0.75} depthWrite={false} />
-          </points>
-          <points>
-            <bufferGeometry>
-              <bufferAttribute attach="attributes-position" args={[brightStars, 3]} />
-            </bufferGeometry>
-            <pointsMaterial map={starTex} color="#ffffff" size={0.15} sizeAttenuation transparent depthWrite={false} />
-          </points>
-        </>
-      )}
+      {/* stars — single InstancedMesh with per-instance spectral color + BVH picking */}
+      <InstancedStars
+        stars={data.stars}
+        visible={layers.stars}
+        selectionId={starSelection}
+        onSelect={onSelect}
+      />
 
       {/* constellation lines */}
       {layers.constellations &&
@@ -171,11 +148,9 @@ export function SkyDome({
           })}
 
       {/* ISS orbit track */}
-      {layers.satellites && data.issOrbit.length >= 2 && (
-        <IssOrbitTrack points={data.issOrbit} />
-      )}
+      {layers.satellites && data.issOrbit.length >= 2 && <IssOrbitTrack points={data.issOrbit} />}
 
-      {/* satellites (ISS prominent) */}
+      {/* satellites (ISS prominent) — GLB LOD swap is Phase 5 */}
       {layers.satellites &&
         data.satellites
           .filter((s) => s.aboveHorizon)
@@ -210,6 +185,8 @@ export function SkyDome({
     </group>
   );
 }
+
+// ── Helpers (ported from SkyDome.tsx — identical) ─────────────────────
 
 /** Small red circle (in local billboard space) reused for the zenith marker. */
 const zenithCircle: [number, number, number][] = (() => {
