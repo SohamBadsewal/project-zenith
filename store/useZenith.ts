@@ -1,25 +1,38 @@
-// useZenith.ts — single typed global store (SCHEMA §4).
+'use client';
 import { create } from 'zustand';
 import type { ObserverLocation, SimTime, SkyState } from '@/types';
 import { nowSimTime, clampScrub } from '@/lib/time';
 
-export type Phase = 'landing' | 'warp' | 'globe' | 'descent' | 'sky';
+export type Phase = 'launch' | 'warp' | 'globe' | 'descent' | 'sky';
+export type LaunchPhase = 'idle' | 'magnifying' | 'armed' | 'dragging' | 'launched';
 export type Status = 'idle' | 'loading' | 'live' | 'offlineData' | 'error';
 export type ViewMode = 'static' | 'freeroam';
 
 export interface ZenithStore {
   phase: Phase;
+  launch: LaunchPhase;
+  tension: number;
+  shuttleRect: DOMRect | null;
+  launchedAt: number;
   status: Status;
-  observer: ObserverLocation | null; // null until a point is confirmed
-  pending: ObserverLocation | null; // picked but not yet confirmed (drives the card)
+  observer: ObserverLocation | null;
+  pending: ObserverLocation | null;
   time: SimTime;
-  selectionId: string | null; // highlighted object in the sky view
+  selectionId: string | null;
   viewMode: ViewMode;
   sky: SkyState | null;
 
   setPhase: (p: Phase) => void;
-  pickLocation: (loc: ObserverLocation) => void; // sets pending, opens card
-  confirmLocation: () => void; // pending -> observer, -> descent
+  beginLaunch: (rect: DOMRect) => void;
+  finishMagnify: () => void;
+  armDrag: () => void;
+  setTension: (t: number) => void;
+  releaseDrag: () => void;
+  fireLaunch: () => void;
+  enterWarp: () => void;
+  enterGlobe: () => void;
+  pickLocation: (loc: ObserverLocation) => void;
+  confirmLocation: () => void;
   clearPending: () => void;
   setScrubOffset: (ms: number) => void;
   select: (id: string | null) => void;
@@ -29,8 +42,12 @@ export interface ZenithStore {
   reset: () => void;
 }
 
-export const useZenith = create<ZenithStore>((set) => ({
-  phase: 'landing',
+export const useZenith = create<ZenithStore>((set, get) => ({
+  phase: 'launch',
+  launch: 'idle',
+  tension: 0,
+  shuttleRect: null,
+  launchedAt: 0,
   status: 'idle',
   observer: null,
   pending: null,
@@ -40,23 +57,38 @@ export const useZenith = create<ZenithStore>((set) => ({
   sky: null,
 
   setPhase: (phase) => set({ phase }),
+  beginLaunch: (rect) => get().launch === 'idle' && set({ launch: 'magnifying', shuttleRect: rect }),
+  finishMagnify: () => get().launch === 'magnifying' && set({ launch: 'armed', shuttleRect: null }),
+  armDrag: () => {
+    const l = get().launch;
+    if (l === 'armed' || l === 'dragging') set({ launch: 'dragging', tension: 0 });
+  },
+  setTension: (t) => {
+    if (get().launch !== 'dragging') return;
+    const tension = Math.min(1, Math.max(0, t));
+    if (tension >= 0.92) set({ launch: 'launched', tension: 1, launchedAt: performance.now() });
+    else set({ tension });
+  },
+  releaseDrag: () => get().launch === 'dragging' && set({ launch: 'armed', tension: 0 }),
+  fireLaunch: () => set({ launch: 'launched', tension: 1, launchedAt: performance.now() }),
+  enterWarp: () => set({ phase: 'warp' }),
+  enterGlobe: () => set({ phase: 'globe' }),
   pickLocation: (pending) => set({ pending }),
   confirmLocation: () =>
-    set((s) =>
-      s.pending
-        ? { observer: s.pending, pending: null, phase: 'descent' }
-        : {},
-    ),
+    set((s) => (s.pending ? { observer: s.pending, pending: null, phase: 'descent' } : {})),
   clearPending: () => set({ pending: null }),
-  setScrubOffset: (ms) =>
-    set((s) => ({ time: { ...s.time, scrubOffsetMs: clampScrub(ms) } })),
+  setScrubOffset: (ms) => set((s) => ({ time: { ...s.time, scrubOffsetMs: clampScrub(ms) } })),
   select: (selectionId) => set({ selectionId }),
   setViewMode: (viewMode) => set({ viewMode }),
   setSky: (sky) => set({ sky }),
   setStatus: (status) => set({ status }),
   reset: () =>
     set({
-      phase: 'landing',
+      phase: 'launch',
+      launch: 'idle',
+      tension: 0,
+      shuttleRect: null,
+      launchedAt: 0,
       status: 'idle',
       observer: null,
       pending: null,

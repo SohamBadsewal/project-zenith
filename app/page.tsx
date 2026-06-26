@@ -9,6 +9,9 @@ import { useZenith } from '@/store/useZenith';
 import { useSky } from '@/hooks/useSky';
 import { Globe } from '@/components/scene/Globe';
 import { Starfield } from '@/components/scene/Starfield';
+import { HeroScene } from '@/components/hero/HeroScene';
+import { HeroHud } from '@/components/hero/HeroHud';
+import { audio } from '@/components/hero/audio';
 import { SkyPlanetarium, type Layers, type FocusInfo } from '@/components/scene/SkyPlanetarium';
 import { DetailPanel } from '@/components/ui/DetailPanel';
 import { TransitionRig } from '@/components/scene/TransitionRig';
@@ -31,6 +34,7 @@ const DEFAULT_LAYERS: Layers = {
 
 export default function Page() {
   const phase = useZenith((s) => s.phase);
+  const launch = useZenith((s) => s.launch);
   const observer = useZenith((s) => s.observer);
   const selectionId = useZenith((s) => s.selectionId);
   const select = useZenith((s) => s.select);
@@ -46,6 +50,7 @@ export default function Page() {
   const hashWritten = useRef(false);
   const tRef = useRef(0);
   const overlayRef = useRef<HTMLDivElement>(null);
+  const warpRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => setMounted(true), []);
 
@@ -64,6 +69,27 @@ export default function Page() {
       time: { liveEpochMs: params.epochMs, scrubOffsetMs: 0 },
     });
   }, [mounted]);
+
+  useEffect(() => {
+    if (launch !== 'launched') return;
+    const t = setTimeout(() => useZenith.getState().enterWarp(), 2200);
+    return () => clearTimeout(t);
+  }, [launch]);
+
+  useEffect(() => {
+    if (phase !== 'warp') return;
+    audio.fadeRoar(1.2);
+    if (warpRef.current) {
+      warpRef.current.style.animation = 'none';
+      void warpRef.current.offsetWidth;
+      warpRef.current.style.animation = 'warpFlash 900ms ease-out forwards';
+    }
+    const t = setTimeout(() => {
+      audio.spaceHum();
+      useZenith.getState().enterGlobe();
+    }, 700);
+    return () => clearTimeout(t);
+  }, [phase]);
 
   useEffect(() => {
     if (phase !== 'descent') return;
@@ -102,7 +128,8 @@ export default function Page() {
     if (phase !== 'sky') hashWritten.current = false;
   }, [phase]);
 
-  const showGlobe = phase === 'landing' || phase === 'globe' || phase === 'descent';
+  const showHero = phase === 'launch' || phase === 'warp';
+  const showGlobe = phase === 'warp' || phase === 'globe' || phase === 'descent';
   const showSky = phase === 'sky';
 
   const goBack = () => {
@@ -132,7 +159,9 @@ export default function Page() {
   return (
     <main className="relative h-screen w-screen overflow-hidden bg-black">
       {mounted && (
-        <Canvas camera={{ position: [0, 0, 3], fov: 45 }}>
+        <Canvas shadows dpr={[1, 2]} gl={{ powerPreference: 'high-performance', antialias: true }} camera={{ position: [0, 4.5, 22], fov: 45, near: 0.1, far: 1000 }}>
+          {showHero && <HeroScene />}
+
           {showGlobe && (
             <>
               <ambientLight intensity={0.6} />
@@ -144,12 +173,18 @@ export default function Page() {
           )}
 
           {showSky && (
-            <>
-              <SkyPlanetarium data={sky} layers={layers} selectionId={selectionId} onSelect={select} onFocus={setFocusInfo} />
-              <EffectComposer>
-                <Bloom luminanceThreshold={0.3} luminanceSmoothing={0.85} intensity={0.7} radius={0.5} mipmapBlur />
-              </EffectComposer>
-            </>
+            <SkyPlanetarium data={sky} layers={layers} selectionId={selectionId} onSelect={select} onFocus={setFocusInfo} />
+          )}
+
+          {showHero && (
+            <EffectComposer>
+              <Bloom luminanceThreshold={0.55} luminanceSmoothing={0.18} intensity={2.0} radius={0.85} mipmapBlur />
+            </EffectComposer>
+          )}
+          {showSky && (
+            <EffectComposer>
+              <Bloom luminanceThreshold={0.3} luminanceSmoothing={0.85} intensity={0.7} radius={0.5} mipmapBlur />
+            </EffectComposer>
           )}
 
           <TransitionRig phase={phase} tRef={tRef} />
@@ -174,8 +209,9 @@ export default function Page() {
       )}
 
       <div ref={overlayRef} className="pointer-events-none absolute inset-0 z-40 bg-black opacity-0 transition-opacity duration-1000 ease-in-out" />
+      <div ref={warpRef} className="pointer-events-none absolute inset-0 z-50 bg-white opacity-0" />
 
-      {phase === 'landing' && <LandingHero onStart={() => setPhase('globe')} />}
+      {showHero && <HeroHud />}
 
       {phase === 'globe' && (
         <>
@@ -221,28 +257,5 @@ export default function Page() {
         </>
       )}
     </main>
-  );
-}
-
-function LandingHero({ onStart }: { onStart: () => void }) {
-  return (
-    <div className="pointer-events-none absolute inset-0 z-10 flex flex-col justify-center p-8 sm:p-16">
-      <div className="max-w-lg">
-        <div className="label text-[var(--text-secondary)]">Project Zenith</div>
-        <h1 className="mt-3 font-sans text-4xl font-medium leading-tight text-white sm:text-6xl">
-          The Celestial Eye
-        </h1>
-        <p className="mt-4 max-w-md font-sans text-base leading-relaxed text-[var(--text-secondary)]">
-          Pick any point on Earth and see the planets, stars, constellations and
-          satellites passing through its zenith right now.
-        </p>
-        <button
-          onClick={onStart}
-          className="pointer-events-auto mt-8 h-12 border border-white/20 bg-white/[0.06] px-7 font-mono text-[13px] uppercase tracking-[0.08em] text-white backdrop-blur-sm transition-colors hover:border-white/40"
-        >
-          Start exploring ▸
-        </button>
-      </div>
-    </div>
   );
 }

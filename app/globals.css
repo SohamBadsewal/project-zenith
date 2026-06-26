@@ -50,6 +50,18 @@ body {
   color: var(--text-secondary);
 }
 
+@keyframes warpFlash {
+  0% {
+    opacity: 0;
+  }
+  35% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
 @keyframes fadeUp {
   from {
     opacity: 0;

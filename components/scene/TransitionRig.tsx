@@ -18,6 +18,7 @@ export function TransitionRig({ phase, tRef }: { phase: Phase; tRef: { current: 
   const start = useRef({ pos: new THREE.Vector3(), fov: GLOBE_FOV });
 
   useEffect(() => {
+    if (phase === 'launch' || phase === 'warp') return;
     if (phase === 'descent') {
       start.current.pos.copy(camera.position);
       start.current.fov = camera.fov;
