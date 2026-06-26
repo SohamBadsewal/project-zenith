@@ -9,7 +9,7 @@ import { useZenith } from '@/store/useZenith';
 import { useSky } from '@/hooks/useSky';
 import { Globe } from '@/components/scene/Globe';
 import { Starfield } from '@/components/scene/Starfield';
-import { SkyPlanetarium, type Layers } from '@/components/scene/SkyPlanetarium';
+import { SkyPlanetarium, type Layers, type FocusInfo } from '@/components/scene/SkyPlanetarium';
 import { TransitionRig } from '@/components/scene/TransitionRig';
 import { StaticCamera } from '@/components/scene/StaticCamera';
 import { Hud } from '@/components/ui/Hud';
@@ -39,6 +39,7 @@ export default function Page() {
 
   const [mounted, setMounted] = useState(false);
   const [layers, setLayers] = useState<Layers>(DEFAULT_LAYERS);
+  const [focusInfo, setFocusInfo] = useState<FocusInfo | null>(null);
   const [copied, setCopied] = useState(false);
   const sky = useSky();
   const hashWritten = useRef(false);
@@ -106,6 +107,7 @@ export default function Page() {
   const goBack = () => {
     window.location.hash = '';
     if (overlayRef.current) overlayRef.current.style.opacity = '0';
+    setFocusInfo(null);
     useZenith.setState({
       phase: 'globe',
       observer: null,
@@ -142,7 +144,7 @@ export default function Page() {
 
           {showSky && (
             <>
-              <SkyPlanetarium data={sky} layers={layers} selectionId={selectionId} onSelect={select} />
+              <SkyPlanetarium data={sky} layers={layers} selectionId={selectionId} onSelect={select} onFocus={setFocusInfo} />
               <EffectComposer>
                 <Bloom luminanceThreshold={0.3} luminanceSmoothing={0.85} intensity={0.7} radius={0.5} mipmapBlur />
               </EffectComposer>
@@ -205,6 +207,18 @@ export default function Page() {
             <div className="h-6 w-6 rounded-full border border-white/40" />
             <div className="absolute left-1/2 top-1/2 h-[3px] w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/70" />
           </div>
+
+          {focusInfo && (
+            <div key={focusInfo.id} className="pointer-events-none absolute bottom-10 left-6 z-30 max-w-[min(80vw,420px)] animate-[fadeUp_.35s_ease] sm:left-8">
+              <div className="font-sans text-3xl font-medium leading-tight text-[var(--interactive)] sm:text-4xl">
+                {focusInfo.name}
+              </div>
+              <div className="mt-1 font-mono text-[13px] text-[var(--text-secondary)]">{focusInfo.subtitle}</div>
+              {focusInfo.blurb && (
+                <div className="mt-2 font-mono text-[12px] leading-relaxed text-[var(--text-disabled)]">{focusInfo.blurb}</div>
+              )}
+            </div>
+          )}
 
           <button
             onClick={copyShareLink}

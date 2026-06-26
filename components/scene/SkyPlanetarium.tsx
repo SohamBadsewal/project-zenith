@@ -1,17 +1,27 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { Billboard, Line, Text } from '@react-three/drei';
-import { altAzToVec3 } from '@/lib/dome';
+import { useMemo, useRef, useState } from 'react';
+import { useFrame, useThree } from '@react-three/fiber';
+import { Billboard, Line } from '@react-three/drei';
+import * as THREE from 'three';
+import { altAzToVec3, circlePoints } from '@/lib/dome';
 import { satId, type SkyData, type IssOrbitPoint } from '@/hooks/useSky';
 import type { CelestialObject, SatelliteState } from '@/types';
 import { InstancedStars } from './InstancedStars';
 import { SatModel } from './SatModel';
 import { PlanetModel } from './PlanetModel';
 import { Constellations } from './Constellations';
-import { FocusController, FocusCard, type Candidate } from './ProximityReticle';
+import { ConstellationArt } from './ConstellationArt';
+import { Trajectory } from './Trajectory';
+import { DeepSkyObjects } from './DeepSkyObjects';
+import { bodyTrajectory, satTrajectory, type TrajectoryPoint } from '@/lib/trajectory';
+import { DSOS } from '@/hooks/useSky';
+import { effectiveEpochMs } from '@/lib/time';
+import { useZenith } from '@/store/useZenith';
 
 const DOME_R = 5;
+const OBJ_NEAR = Math.cos((6 * Math.PI) / 180);
+const CON_NEAR = Math.cos((22 * Math.PI) / 180);
 
 export interface Layers {
   stars: boolean;
@@ -21,54 +31,114 @@ export interface Layers {
   labels: boolean;
 }
 
-const isNamed = (s: CelestialObject) => !/^HR\s/.test(s.name);
+export interface FocusInfo {
+  id: string;
+  name: string;
+  subtitle: string;
+  blurb?: string;
+}
+
+const KIND_LABEL: Record<string, string> = { sun: 'Star · our Sun', moon: 'Moon', planet: 'Planet', star: 'Star' };
+const isHiFiSat = (s: SatelliteState) => s.name.includes('ISS') || /HST|HUBBLE/i.test(s.name);
+
+type Cand = { id: string; vec: THREE.Vector3; info: FocusInfo };
 
 export function SkyPlanetarium({
   data,
   layers,
   selectionId,
   onSelect,
+  onFocus,
 }: {
   data: SkyData;
   layers: Layers;
   selectionId: string | null;
   onSelect: (id: string | null) => void;
+  onFocus: (info: FocusInfo | null) => void;
 }) {
   const [focusId, setFocusId] = useState<string | null>(null);
   const starSelection = selectionId?.startsWith('star:') ? selectionId : null;
+  const sats = useMemo(() => data.satellites.filter(isHiFiSat), [data.satellites]);
 
-  const namedStars = useMemo(() => data.stars.filter(isNamed), [data.stars]);
-
-  const candidates = useMemo<Candidate[]>(() => {
-    const out: Candidate[] = [];
-    if (layers.planets) for (const b of data.bodies) out.push({ id: b.id, altDeg: b.altDeg, azDeg: b.azDeg });
-    if (layers.stars) for (const s of namedStars) out.push({ id: s.id, altDeg: s.altDeg, azDeg: s.azDeg });
+  const objCands = useMemo<Cand[]>(() => {
+    const out: Cand[] = [];
+    const v = (alt: number, az: number) => {
+      const [x, y, z] = altAzToVec3(alt, az, 1);
+      return new THREE.Vector3(x, y, z);
+    };
+    if (layers.planets)
+      for (const b of data.bodies)
+        out.push({ id: b.id, vec: v(b.altDeg, b.azDeg), info: { id: b.id, name: b.name, subtitle: KIND_LABEL[b.kind] ?? 'Body', blurb: bodyLines(b) } });
+    if (layers.stars)
+      for (const s of data.stars)
+        out.push({ id: s.id, vec: v(s.altDeg, s.azDeg), info: { id: s.id, name: s.name, subtitle: s.con ? `Star in ${s.con}` : 'Star', blurb: starLines(s) } });
     if (layers.satellites)
-      for (const s of data.satellites) out.push({ id: satId(s.noradId), altDeg: s.elevationDeg, azDeg: s.azDeg });
+      for (const s of sats) {
+        const id = satId(s.noradId);
+        out.push({ id, vec: v(s.elevationDeg, s.azDeg), info: { id, name: cleanSat(s.name), subtitle: /HST|HUBBLE/i.test(s.name) ? 'Space telescope' : 'Satellite', blurb: satLines(s) } });
+      }
     return out;
-  }, [data.bodies, data.satellites, namedStars, layers]);
+  }, [data.bodies, data.stars, sats, layers]);
 
-  const focus = useMemo(() => {
-    if (!focusId) return null;
-    const b = data.bodies.find((x) => x.id === focusId);
-    if (b) return { altDeg: b.altDeg, azDeg: b.azDeg, title: b.name, lines: bodyLines(b), star: false };
-    const s = namedStars.find((x) => x.id === focusId);
-    if (s) return { altDeg: s.altDeg, azDeg: s.azDeg, title: s.name, lines: starLines(s), star: true };
-    const sat = data.satellites.find((x) => satId(x.noradId) === focusId);
-    if (sat) return { altDeg: sat.elevationDeg, azDeg: sat.azDeg, title: sat.name, lines: satLines(sat), star: false };
-    return null;
-  }, [focusId, data.bodies, data.satellites, namedStars]);
+  const conCands = useMemo<Cand[]>(() => {
+    const blurbs = new Map(data.art.map((a) => [a.id, a.blurb]));
+    return data.constellations
+      .map((c) => {
+        const dir = new THREE.Vector3();
+        let n = 0;
+        for (const path of c.paths)
+          for (const [alt, az] of path) {
+            const [x, y, z] = altAzToVec3(alt, az, 1);
+            dir.add(new THREE.Vector3(x, y, z));
+            n++;
+          }
+        if (!n) return null;
+        return { id: c.id, vec: dir.normalize(), info: { id: `con:${c.id}`, name: c.name, subtitle: 'Constellation', blurb: blurbs.get(c.id) } };
+      })
+      .filter(Boolean) as Cand[];
+  }, [data.constellations, data.art]);
+
+  const focusStar = focusId?.startsWith('star:') ? data.stars.find((s) => s.id === focusId) : null;
+
+  // Observer + effective time for trajectory + DSO projection.
+  const observer = useZenith((s) => s.observer);
+  const dateMs = effectiveEpochMs(useZenith((s) => s.time));
+
+  // Compute trajectory for the selected body/satellite.
+  const trajectoryPts = useMemo<TrajectoryPoint[]>(() => {
+    if (!selectionId || !observer) return [];
+    if (selectionId.startsWith('sat:')) {
+      const norad = Number(selectionId.slice(4));
+      const tle = data.tleById.get(norad);
+      return tle ? satTrajectory(tle, observer, new Date(dateMs)) : [];
+    }
+    if (selectionId.startsWith('planet:') || selectionId === 'sun' || selectionId === 'moon') {
+      return bodyTrajectory(selectionId, observer, new Date(dateMs));
+    }
+    return [];
+  }, [selectionId, observer, dateMs, data.tleById]);
 
   return (
     <group>
       <ambientLight intensity={0.22} />
       <SunLight bodies={data.bodies} />
 
-      <FocusController candidates={candidates} current={focusId} onFocus={setFocusId} />
+      <FocusScan objCands={objCands} conCands={conCands} layers={layers} setFocusId={setFocusId} onFocus={onFocus} />
 
       <InstancedStars stars={data.stars} visible={layers.stars} selectionId={starSelection} onSelect={onSelect} />
 
-      {layers.constellations && <Constellations constellations={data.constellations} />}
+      {layers.constellations && (
+        <>
+          <Constellations constellations={data.constellations} />
+          <ConstellationArt art={data.art} />
+        </>
+      )}
+
+      {focusStar && (
+        <Billboard position={altAzToVec3(focusStar.altDeg, focusStar.azDeg, DOME_R)}>
+          <Line points={focusRing} color="#ffffff" lineWidth={1} transparent opacity={0.6} />
+        </Billboard>
+      )}
 
       {layers.planets &&
         data.bodies.map((b) => (
@@ -77,55 +147,85 @@ export function SkyPlanetarium({
               body={b}
               focused={focusId === b.id}
               selected={selectionId === b.id}
-              onClick={(e) => {
-                e.stopPropagation();
-                onSelect(selectionId === b.id ? null : b.id);
-              }}
+              onClick={(e) => { e.stopPropagation(); onSelect(selectionId === b.id ? null : b.id); }}
             />
-            {layers.labels && focusId !== b.id && (
-              <Billboard>
-                <Text position={[0, 0.34, 0]} fontSize={0.16} color="#999999" anchorX="center">
-                  {b.name}
-                </Text>
-              </Billboard>
-            )}
           </group>
         ))}
 
       {layers.satellites && data.issOrbit.length >= 2 && <IssOrbitTrack points={data.issOrbit} />}
 
       {layers.satellites &&
-        data.satellites.map((s) => {
+        sats.map((s) => {
           const isISS = s.name.includes('ISS');
-          const glbUrl = isISS ? '/models/iss.glb' : /HST|HUBBLE/i.test(s.name) ? '/models/hubble.glb' : undefined;
+          const glbUrl = isISS ? '/models/iss.glb' : '/models/hubble.glb';
           const id = satId(s.noradId);
           const selected = selectionId === id;
-          const focused = focusId === id;
           return (
             <group key={id} position={altAzToVec3(s.elevationDeg, s.azDeg, DOME_R)}>
               {selected ? (
                 <SatModel iss={isISS} glbUrl={glbUrl} onClick={(e) => { e.stopPropagation(); onSelect(null); }} />
               ) : (
                 <Billboard>
-                  <mesh
-                    scale={focused ? 1.8 : 1}
-                    onClick={(e) => { e.stopPropagation(); onSelect(id); }}
-                  >
-                    <circleGeometry args={[isISS ? 0.12 : 0.05, 16]} />
-                    <meshBasicMaterial color={focused ? '#aef0c0' : '#4a9e5c'} />
+                  <mesh onClick={(e) => { e.stopPropagation(); onSelect(id); }}>
+                    <circleGeometry args={[0.07, 18]} />
+                    <meshBasicMaterial color="#cfd6e0" />
                   </mesh>
                 </Billboard>
               )}
             </group>
           );
         })}
-
-      {focus && (
-        <FocusCard altDeg={focus.altDeg} azDeg={focus.azDeg} title={focus.title} lines={focus.lines} star={focus.star} />
-      )}
     </group>
   );
 }
+
+function FocusScan({
+  objCands,
+  conCands,
+  layers,
+  setFocusId,
+  onFocus,
+}: {
+  objCands: Cand[];
+  conCands: Cand[];
+  layers: Layers;
+  setFocusId: (id: string | null) => void;
+  onFocus: (info: FocusInfo | null) => void;
+}) {
+  const camera = useThree((s) => s.camera);
+  const fwd = useRef(new THREE.Vector3());
+  const cur = useRef<string | null>(null);
+
+  useFrame(() => {
+    camera.getWorldDirection(fwd.current);
+    let obj: Cand | null = null;
+    let od = OBJ_NEAR;
+    for (const c of objCands) {
+      const d = c.vec.dot(fwd.current);
+      if (d > od) { od = d; obj = c; }
+    }
+    let info: FocusInfo | null = obj ? obj.info : null;
+    if (!obj && layers.constellations) {
+      let con: Cand | null = null;
+      let cd = CON_NEAR;
+      for (const c of conCands) {
+        const d = c.vec.dot(fwd.current);
+        if (d > cd) { cd = d; con = c; }
+      }
+      info = con ? con.info : null;
+    }
+    const id = info?.id ?? null;
+    if (id !== cur.current) {
+      cur.current = id;
+      setFocusId(obj ? obj.id : null);
+      onFocus(info);
+    }
+  });
+
+  return null;
+}
+
+const focusRing = circlePoints(0.34, 40);
 
 function SunLight({ bodies }: { bodies: CelestialObject[] }) {
   const sun = bodies.find((b) => b.kind === 'sun');
@@ -133,29 +233,45 @@ function SunLight({ bodies }: { bodies: CelestialObject[] }) {
   return <directionalLight position={pos as [number, number, number]} intensity={2.6} />;
 }
 
-const KIND_LABEL: Record<string, string> = { sun: 'STAR · OUR SUN', moon: 'MOON', planet: 'PLANET', star: 'STAR' };
+const cleanSat = (n: string) => n.replace(/\s*\(.*\)$/, '');
 
-function bodyLines(b: CelestialObject): string[] {
-  const lines = [`${KIND_LABEL[b.kind] ?? 'BODY'} · ALT ${Math.round(b.altDeg)}° · AZ ${Math.round(b.azDeg)}°`];
-  if (b.kind === 'moon' && b.phase != null) lines.push(`ILLUMINATED ${Math.round(b.phase * 100)}%`);
-  else if (b.distanceAu != null) lines.push(`${b.distanceAu.toFixed(2)} AU from Earth`);
-  else if (b.magnitude != null) lines.push(`MAG ${b.magnitude.toFixed(1)}`);
-  return lines;
+function bodyLines(b: CelestialObject): string {
+  const parts = [`Alt ${Math.round(b.altDeg)}° · Az ${Math.round(b.azDeg)}°`];
+  if (b.kind === 'moon' && b.phase != null) parts.push(`${Math.round(b.phase * 100)}% lit`);
+  else if (b.distanceAu != null) parts.push(`${b.distanceAu.toFixed(2)} AU away`);
+  else if (b.magnitude != null) parts.push(`mag ${b.magnitude.toFixed(1)}`);
+  return parts.join(' · ');
 }
 
-function starLines(s: CelestialObject): string[] {
-  const lines = [`STAR · ALT ${Math.round(s.altDeg)}° · AZ ${Math.round(s.azDeg)}°`];
-  if (s.magnitude != null) lines.push(`MAG ${s.magnitude.toFixed(1)}`);
-  return lines;
+function starLines(s: CelestialObject): string {
+  const parts: string[] = [];
+  if (s.magnitude != null) parts.push(`mag ${s.magnitude.toFixed(1)}`);
+  if (s.spect) {
+    const label = spectLabel(s.spect);
+    if (label) parts.push(label);
+  }
+  if (s.distLy != null) parts.push(`${s.distLy.toLocaleString()} ly away`);
+  if (s.con) parts.push(`in ${s.con}`);
+  return parts.join(' · ');
 }
 
-function satLines(s: SatelliteState): string[] {
-  const lines = [`SATELLITE · ALT ${Math.round(s.elevationDeg)}° · AZ ${Math.round(s.azDeg)}°`];
+// Translate a spectral type string (e.g. "K1III", "B5V") into a short,
+// human-readable description of the star's colour and class.
+function spectLabel(spect: string): string | null {
+  const c = spect.trim()[0];
+  const CLASS: Record<string, string> = {
+    O: 'Hot blue star', B: 'Blue-white star', A: 'White star', F: 'Yellow-white star',
+    G: 'Sun-like star', K: 'Orange star', M: 'Red star',
+  };
+  return CLASS[c] ?? null;
+}
+
+function satLines(s: SatelliteState): string {
   const parts: string[] = [];
   if (s.velocityKmS != null) parts.push(`${s.velocityKmS.toFixed(2)} km/s`);
   parts.push(`${Math.round(s.altKm)} km up`);
-  lines.push(parts.join(' · '));
-  return lines;
+  parts.push(`Alt ${Math.round(s.elevationDeg)}°`);
+  return parts.join(' · ');
 }
 
 function IssOrbitTrack({ points }: { points: IssOrbitPoint[] }) {
@@ -164,10 +280,8 @@ function IssOrbitTrack({ points }: { points: IssOrbitPoint[] }) {
     let current: Array<[number, number, number]> = [];
     for (const p of points) {
       if (p.altDeg > 0) current.push(altAzToVec3(p.altDeg, p.azDeg, DOME_R));
-      else if (current.length >= 2) {
-        segs.push(current);
-        current = [];
-      } else current = [];
+      else if (current.length >= 2) { segs.push(current); current = []; }
+      else current = [];
     }
     if (current.length >= 2) segs.push(current);
     return segs;
@@ -177,7 +291,7 @@ function IssOrbitTrack({ points }: { points: IssOrbitPoint[] }) {
   return (
     <>
       {segments.map((seg, i) => (
-        <Line key={i} points={seg} color="#4a9e5c" lineWidth={1} transparent opacity={0.35} dashed dashSize={0.15} gapSize={0.1} />
+        <Line key={i} points={seg} color="#6b7280" lineWidth={1} transparent opacity={0.35} dashed dashSize={0.15} gapSize={0.1} />
       ))}
     </>
   );

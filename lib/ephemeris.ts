@@ -92,7 +92,7 @@ export function computeStar(
   const hor = Astronomy.Horizon(date, obs, star.raDeg / 15, star.decDeg, 'normal');
   return {
     id: `star:HR${star.hr}`,
-    name: star.name ?? `HR ${star.hr}`,
+    name: star.name,
     kind: 'star',
     raDeg: star.raDeg,
     decDeg: star.decDeg,
@@ -102,6 +102,9 @@ export function computeStar(
     aboveHorizon: hor.altitude > 0,
     source: 'astronomy-engine',
     bv: star.bv,
+    con: star.con,
+    distLy: star.dist,
+    spect: star.spect,
   };
 }
 

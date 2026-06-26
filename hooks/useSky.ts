@@ -34,9 +34,29 @@ import type {
 } from '@/types';
 import bsc5 from '@/data/bsc5.json';
 import constellationData from '@/data/constellations.json';
+import constellationArtData from '@/data/constellation-art.json';
+import dsoData from '@/data/dso.json';
+import type { CatalogStar } from '@/types';
+import type { DsoData } from '@/components/scene/DeepSkyObjects';
 
-const STARS = bsc5 as Array<{ hr: number; name?: string; raDeg: number; decDeg: number; mag: number; bv?: number }>;
+// Only stars with a proper name (Sirius, Vega…). build-star-data.mjs emits names
+// starting with a Greek letter (Bayer "α And"), a digit (Flamsteed "21 Ori"), or a
+// capital Latin letter (proper name "Sirius"). /^[A-Z]/ selects just the latter —
+// the ~300 famous named stars — so the sky stays clean and every dot is labelled.
+const STARS = (bsc5 as CatalogStar[]).filter((s) => /^[A-Z]/.test(s.name));
 const CONSTELLATIONS = constellationData as ConstellationFigure[];
+
+interface ArtSource {
+  id: string;
+  name: string;
+  file: string;
+  w: number;
+  h: number;
+  blurb: string;
+  anchors: Array<{ px: number; py: number; raDeg: number; decDeg: number }>;
+}
+const ART = constellationArtData as ArtSource[];
+export const DSOS = dsoData as DsoData[];
 
 const SAT_TICK_MS = 1000; // satellites + bodies recompute cadence
 const STAR_TICK_MS = 15000; // stars recompute cadence (they drift slowly)
@@ -52,15 +72,28 @@ export interface ProjectedConstellation {
 /** Alt/Az waypoints for the ISS over the next ~90 min (one orbit). */
 export type IssOrbitPoint = { altDeg: number; azDeg: number; minsFromNow: number };
 
+export type ProjectedAnchor = { px: number; py: number; altDeg: number; azDeg: number };
+export interface ProjectedArt {
+  id: string;
+  name: string;
+  file: string;
+  w: number;
+  h: number;
+  blurb: string;
+  anchors: ProjectedAnchor[];
+}
+
 export interface SkyData {
   bodies: CelestialObject[];
   stars: CelestialObject[];
   satellites: SatelliteState[];
   constellations: ProjectedConstellation[];
+  art: ProjectedArt[];
   zenithObjectId: string | null;
   countAboveHorizon: number;
   dataMode: 'live' | 'offline' | 'mixed';
   issOrbit: IssOrbitPoint[];
+  tleById: Map<number, SatelliteTLE>;
 }
 
 const EMPTY: SkyData = {
@@ -68,10 +101,12 @@ const EMPTY: SkyData = {
   stars: [],
   satellites: [],
   constellations: [],
+  art: [],
   zenithObjectId: null,
   countAboveHorizon: 0,
   dataMode: 'offline',
   issOrbit: [],
+  tleById: new Map(),
 };
 
 function projectConstellations(
@@ -87,6 +122,21 @@ function projectConstellations(
         return [altDeg, azDeg] as [number, number];
       }),
     ),
+  }));
+}
+
+function projectArt(observer: ObserverLocation, date: Date): ProjectedArt[] {
+  return ART.map((a) => ({
+    id: a.id,
+    name: a.name,
+    file: a.file,
+    w: a.w,
+    h: a.h,
+    blurb: a.blurb,
+    anchors: a.anchors.map((an) => {
+      const { altDeg, azDeg } = raDecToAltAz(an.raDeg, an.decDeg, observer, date);
+      return { px: an.px, py: an.py, altDeg, azDeg };
+    }),
   }));
 }
 
@@ -114,6 +164,7 @@ export function useSky(): SkyData {
   const prevElev = useRef<Map<number, number>>(new Map());
   const starsRef = useRef<CelestialObject[]>([]);
   const constellationsRef = useRef<ProjectedConstellation[]>([]);
+  const artRef = useRef<ProjectedArt[]>([]);
   const lastStarCompute = useRef(0);
   const starPending = useRef(false);
 
@@ -159,11 +210,14 @@ export function useSky(): SkyData {
         const d = new Date(effectiveEpochMs(useZenith.getState().time));
         starsRef.current = computeStars(STARS, obs, d);
         constellationsRef.current = projectConstellations(obs, d);
+        artRef.current = projectArt(obs, d);
         lastStarCompute.current = Date.now();
         setData((prev) => ({
           ...prev,
           stars: starsRef.current,
           constellations: constellationsRef.current,
+          art: artRef.current,
+          tleById: new Map(tlesRef.current.map((t) => [t.noradId, t])),
         }));
       });
     };
@@ -201,10 +255,12 @@ export function useSky(): SkyData {
         stars: starsRef.current,
         satellites,
         constellations: constellationsRef.current,
+        art: artRef.current,
         zenithObjectId: sky.zenithObjectId,
         countAboveHorizon: sky.countAboveHorizon,
         dataMode: dataModeRef.current,
         issOrbit,
+        tleById: new Map(tlesRef.current.map((t) => [t.noradId, t])),
       }));
       setSky(sky);
       setStatus(dataModeRef.current === 'live' ? 'live' : 'offlineData');

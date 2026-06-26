@@ -35,6 +35,9 @@ export interface CelestialObject {
   distanceAu?: number; // planets/sun, astronomical units
   phase?: number; // moon illuminated fraction 0..1
   bv?: number; // B-V color index (stars only) — spectral tint for rendering
+  con?: string; // host constellation (stars), full name
+  distLy?: number; // distance in light-years (stars)
+  spect?: string; // spectral type (stars)
 }
 
 export interface SatelliteTLE {
@@ -83,12 +86,15 @@ export interface SkyState {
 // ── Bundled static data ───────────────────────────────────────────────
 
 export interface CatalogStar {
-  hr: number; // Harvard Revised / BSC number (id)
-  name?: string; // proper name if notable, e.g. "Sirius"
+  hr: number; // HIP id (unique)
+  name: string; // proper name, else Bayer/Flamsteed designation
+  con?: string; // host constellation, full name (e.g. "Andromeda")
   raDeg: number; // degrees, J2000
   decDeg: number; // degrees, J2000
   mag: number; // apparent visual magnitude
   bv?: number; // B-V colour index (optional, for star tint)
+  dist?: number; // distance, light-years
+  spect?: string; // spectral type
 }
 
 // ── Proxy route response contracts (app/api/*) ────────────────────────
