@@ -1,16 +1,16 @@
 # Project Zenith — Progress
 
 ## Current Status
-Phase 5 substantially complete: 5A bloom + 5B LOD swap shipped; SatModel now GLB-ready (drop-in iss.glb auto-loads).
+Phase 5 COMPLETE. Real Draco GLB models (ISS + Hubble) load + render; bloom + LOD swap shipped.
 
 ## Just Completed
-- [x] SatModel: useGLTF('/models/iss.glb','/draco/') + bbox-normalize + ErrorBoundary→procedural fallback
-- [x] /public/models created (drop-in location); /public/draco decoder staged
-- [x] tsc green; verified app: sat select/deselect works, no console errors (procedural fallback active)
+- [x] Wired SatModel glbUrl: ISS→/models/iss.glb, HST/Hubble→/models/hubble.glb (else procedural)
+- [x] Verified real models: both valid Draco glTF; selecting ISS fetched iss.glb (200) + draco decoder wasm (200), decoded + rendered, no console errors / no fallback
+- [x] tsc green throughout
 
 ## Current Blockers/Bugs
-- Awaiting a license-vetted ISS .glb from user → /public/models/iss.glb (then real model auto-loads).
+- Screenshot capture intermittently times out late-session (weak GPU under model+bloom); app verified alive + correct via network log + evals.
 - next build env hang (deploy/CI only).
 
 ## Next Immediate Task
-Commit GLB-ready SatModel. Then: real asset wiring on drop-in, or other direction (Phase 2B, build hang, snap-camera/zoom-LOD).
+Commit Hubble wiring + GLB assets. Then optional polish (snap-camera/zoom-LOD), Phase 2B, or build hang.

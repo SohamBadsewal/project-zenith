@@ -9,7 +9,6 @@ const PANEL = '#16306b';
 const BODY = '#d4d8de';
 const TRUSS = '#9aa0a6';
 const GOLD = '#caa24a';
-const ISS_GLB = '/models/iss.glb';
 
 class GltfBoundary extends Component<{ fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
   state = { failed: false };
@@ -38,9 +37,11 @@ function GltfModel({ url }: { url: string }) {
 
 export function SatModel({
   iss,
+  glbUrl,
   onClick,
 }: {
   iss: boolean;
+  glbUrl?: string;
   onClick: (e: ThreeEvent<MouseEvent>) => void;
 }) {
   const ref = useRef<THREE.Group>(null);
@@ -49,11 +50,11 @@ export function SatModel({
   });
   const proc = iss ? <IssBody /> : <GenericSat />;
   return (
-    <group ref={ref} scale={iss ? 0.85 : 0.5} onClick={onClick}>
-      {iss ? (
+    <group ref={ref} scale={glbUrl ? 0.85 : 0.5} onClick={onClick}>
+      {glbUrl ? (
         <GltfBoundary fallback={proc}>
           <Suspense fallback={proc}>
-            <GltfModel url={ISS_GLB} />
+            <GltfModel url={glbUrl} />
           </Suspense>
         </GltfBoundary>
       ) : (

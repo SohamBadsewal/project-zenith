@@ -157,6 +157,11 @@ export function SkyPlanetarium({
           .filter((s) => s.aboveHorizon)
           .map((s) => {
             const isISS = s.name.includes('ISS');
+            const glbUrl = isISS
+              ? '/models/iss.glb'
+              : /HST|HUBBLE/i.test(s.name)
+                ? '/models/hubble.glb'
+                : undefined;
             const id = satId(s.noradId);
             const selected = selectionId === id;
             const hovered = hoverId === id;
@@ -165,6 +170,7 @@ export function SkyPlanetarium({
                 {selected ? (
                   <SatModel
                     iss={isISS}
+                    glbUrl={glbUrl}
                     onClick={(e) => {
                       e.stopPropagation();
                       onSelect(null);

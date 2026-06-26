@@ -60,9 +60,9 @@
 - [x] 5A selective bloom (`EffectComposer` + `Bloom`, luminance threshold; UI stays crisp) — committed `e373780`, verified
 - [x] 5B `SatMarker→SatModel` LOD swap (`SatModel.tsx` procedural ISS + generic sat; selected → rotating 3D model) — verified: selection + swap + no console errors
 - [x] Draco decoder staged → `/public/draco`
-- [x] SatModel GLB-ready: `useGLTF('/models/iss.glb','/draco/')` + bbox-normalize + ErrorBoundary→procedural fallback (auto-loads when a `.glb` is dropped in `/public/models`)
-- [ ] User drops a license-vetted NASA ISS `.glb` at `/public/models/iss.glb` (Hubble variant + `scripts/prepare-models.mjs` optional)
-- [ ] Zoom-triggered LOD (currently click/select-triggered); snap-camera to selected sat
+- [x] SatModel GLB-ready: `useGLTF(url,'/draco/')` + bbox-normalize + ErrorBoundary→procedural fallback
+- [x] Real **iss.glb** + **hubble.glb** (Draco-compressed, Blender-exported) wired (ISS→iss, HST/Hubble→hubble) — VERIFIED: select ISS → `iss.glb` + `draco_*` fetched 200, decoded, rendered (no fallback, no errors)
+- [ ] Zoom-triggered LOD (currently click/select-triggered); snap-camera to selected sat (polish)
 
 ## Deferred
 - Phase 2B local MapTiler terrain+buildings patch
