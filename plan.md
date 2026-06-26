@@ -56,8 +56,14 @@
 - [x] Sky mounts only in `phase==='sky'` (A7 known-good path); back-nav resets camera
 - [x] Replaced Theatre `CinematicCamera` inter-phase use (files retained, unused)
 
+## Phase 5 — Cinematic GLB + bloom (in progress)
+- [x] 5A selective bloom (`EffectComposer` + `Bloom`, luminance threshold; UI stays crisp) — committed `e373780`, verified
+- [x] 5B `SatMarker→SatModel` LOD swap (`SatModel.tsx` procedural ISS + generic sat; selected → rotating 3D model) — verified: selection + swap + no console errors
+- [x] Draco decoder staged → `/public/draco` (real-GLB drop-in ready)
+- [ ] Real NASA ISS/Hubble `.glb` + `scripts/prepare-models.mjs` (external asset — network + Draco tooling)
+- [ ] Zoom-triggered LOD (currently click/select-triggered); Hubble-specific model; snap-camera to selected sat
+
 ## Deferred
-- Phase 5 NASA ISS/Hubble Draco GLB, `SatMarker→SatModel` LOD, selective B-V bloom
 - Phase 2B local MapTiler terrain+buildings patch
 - UI overlays §4.4 — `ObjectInfoOverlay`, `SidebarNav`, `ViewModeToggle`
 - [x] Perf: deferred cold star/constellation compute to `requestIdleCallback` — transition no longer saturates main thread (verified: black dip arc 0→1→0 smooth, eval runs real-time, stars populate post-dip)

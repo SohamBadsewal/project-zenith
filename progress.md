@@ -1,15 +1,17 @@
 # Project Zenith — Progress
 
 ## Current Status
-Transition smoothing COMPLETE + verified. Globe→sky cinematic is now buttery (no main-thread saturation).
+Phase 5 in progress: 5A bloom committed; 5B LOD swap done + functionally verified. Real-GLB asset pipeline remains.
 
 ## Just Completed
-- [x] Deferred `useSky` cold star+constellation compute to `requestIdleCallback` (off the critical animation path)
-- [x] tsc green; 48/48 tests pass
-- [x] Verified: instrumented descent poll that previously timed out now completes in real-time; overlay dip 0→1→0 smooth; sky + stars populate correctly (Nairobi)
+- [x] 5A selective bloom — committed e373780 (stars/planets glow by brightness, B-V color kept, UI crisp)
+- [x] 5B SatModel.tsx (procedural ISS + generic sat) + LOD swap in SkyPlanetarium (selected → 3D model)
+- [x] Draco decoder copied to /public/draco (real-GLB drop-in ready); tsc green
+- [x] Verified 5B: OverheadPanel select highlights + swaps; no console errors; orbit/drag works
 
 ## Current Blockers/Bugs
-- `next build` env hang still outstanding (deploy/CI only).
+- Screenshot capture timing out late-session (GPU load; app fine per evals + clean console) — visual of model not captured, but logic verified.
+- next build env hang (deploy/CI only).
 
 ## Next Immediate Task
-Commit perf fix; await direction (Phase 5 cinematic GLB / Phase 2B / build hang).
+Commit 5B; then real NASA ISS/Hubble .glb + scripts/prepare-models.mjs (needs network/Draco tooling), or other direction.

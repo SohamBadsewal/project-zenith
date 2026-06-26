@@ -7,6 +7,7 @@ import { altAzToVec3, horizonRing, altitudeRing } from '@/lib/dome';
 import { satId, type SkyData, type IssOrbitPoint } from '@/hooks/useSky';
 import type { CelestialObject, SatelliteState } from '@/types';
 import { InstancedStars } from './InstancedStars';
+import { SatModel } from './SatModel';
 
 const DOME_R = 5;
 
@@ -150,7 +151,7 @@ export function SkyPlanetarium({
       {/* ISS orbit track */}
       {layers.satellites && data.issOrbit.length >= 2 && <IssOrbitTrack points={data.issOrbit} />}
 
-      {/* satellites (ISS prominent) — GLB LOD swap is Phase 5 */}
+      {/* satellites — billboard marker, swaps to a 3D SatModel when selected */}
       {layers.satellites &&
         data.satellites
           .filter((s) => s.aboveHorizon)
@@ -160,26 +161,44 @@ export function SkyPlanetarium({
             const selected = selectionId === id;
             const hovered = hoverId === id;
             return (
-              <Billboard key={id} position={altAzToVec3(s.elevationDeg, s.azDeg, DOME_R)}>
-                <mesh
-                  scale={hovered ? 1.5 : 1}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onSelect(selected ? null : id);
-                  }}
-                  onPointerOver={enter(id)}
-                  onPointerOut={leave(id)}
-                >
-                  <circleGeometry args={[isISS ? 0.12 : 0.05, 16]} />
-                  <meshBasicMaterial color={selected ? '#d71921' : hovered ? '#aef0c0' : '#4a9e5c'} />
-                </mesh>
-                {layers.labels && isISS && !hovered && (
-                  <Text position={[0, 0.26, 0]} fontSize={0.16} color="#4a9e5c" anchorX="center">
-                    ISS
-                  </Text>
+              <group key={id} position={altAzToVec3(s.elevationDeg, s.azDeg, DOME_R)}>
+                {selected ? (
+                  <SatModel
+                    iss={isISS}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelect(null);
+                    }}
+                  />
+                ) : (
+                  <Billboard>
+                    <mesh
+                      scale={hovered ? 1.5 : 1}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSelect(id);
+                      }}
+                      onPointerOver={enter(id)}
+                      onPointerOut={leave(id)}
+                    >
+                      <circleGeometry args={[isISS ? 0.12 : 0.05, 16]} />
+                      <meshBasicMaterial color={hovered ? '#aef0c0' : '#4a9e5c'} />
+                    </mesh>
+                  </Billboard>
                 )}
-                {hovered && <Tooltip title={s.name} lines={satLines(s)} />}
-              </Billboard>
+                {layers.labels && isISS && !hovered && (
+                  <Billboard>
+                    <Text position={[0, selected ? 0.6 : 0.26, 0]} fontSize={0.16} color="#4a9e5c" anchorX="center">
+                      ISS
+                    </Text>
+                  </Billboard>
+                )}
+                {hovered && (
+                  <Billboard>
+                    <Tooltip title={s.name} lines={satLines(s)} />
+                  </Billboard>
+                )}
+              </group>
             );
           })}
     </group>
