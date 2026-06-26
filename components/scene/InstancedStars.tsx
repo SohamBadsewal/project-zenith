@@ -6,12 +6,11 @@ import * as THREE from 'three';
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
 import { altAzToVec3 } from '@/lib/dome';
 import { bvToRgb } from '@/lib/starColor';
+import { starScale, starBrightness } from '@/lib/starSize';
+import { starSpriteTexture } from '@/lib/starSpriteTexture';
 import type { CelestialObject } from '@/types';
 
-// Enable BVH on three.js geometries/meshes (one-time prototype extension).
-// The prototype-patch is the documented three-mesh-bvh usage; the type decls
-// declare computeBoundsTree→MeshBVH but the export returns GeometryBVH (a
-// superset-compat type). The cast silences that version skew — runtime-correct.
+// BVH prototype patch for per-instance raycast picking.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const patchBVH = () => {
   (THREE.BufferGeometry.prototype as any).computeBoundsTree = computeBoundsTree;
@@ -21,16 +20,18 @@ const patchBVH = () => {
 patchBVH();
 
 const DOME_R = 5;
-const STAR_SIZE = 0.035; // instance scale; BVH makes even sub-pixel stars pickable
-
 const _matrix = new THREE.Matrix4();
 const _color = new THREE.Color();
+const _pos = new THREE.Vector3();
+const _quat = new THREE.Quaternion();
+const _scale = new THREE.Vector3();
+const _dummy = new THREE.Object3D();
 
 /**
- * All above-horizon stars as a single InstancedMesh: per-instance position
- * (from altAzToVec3), color (from B-V via bvToRgb), and scale (from magnitude).
- * BVH on the geometry gives O(log n) raycast picking of individual stars —
- * impossible with THREE.Points, which is why SkyDome's stars weren't clickable.
+ * Above-horizon stars as one InstancedMesh of round, soft-glowing sprites
+ * (bright core + halo), sized by magnitude. Each plane instance faces the
+ * origin (where the camera sits) so the radial glow always reads as a round
+ * point. BVH gives O(log n) raycast picking.
  */
 export function InstancedStars({
   stars,
@@ -44,44 +45,95 @@ export function InstancedStars({
   onSelect: (id: string | null) => void;
 }) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
+  const hoveredRef = useRef<number | null>(null);
+  const lastHoveredRef = useRef<number | null>(null);
 
   const visibleStars = useMemo(() => stars, [stars]);
   const count = visibleStars.length;
+  const tex = useMemo(() => starSpriteTexture(), []);
+
+  // Base (per-instance) scale + brightness, so hover/selection can be restored.
+  const baseScales = useRef<Float32Array>(new Float32Array(0));
+  const baseBright = useRef<Float32Array>(new Float32Array(0));
+
+  /** Set instance matrix (position + billboard rotation + scale) and color. */
+  const applyInstance = (i: number, scaleMul = 1, brightMul = 1) => {
+    const mesh = meshRef.current;
+    if (!mesh) return;
+    const s = visibleStars[i];
+    const [x, y, z] = altAzToVec3(s.altDeg, s.azDeg, DOME_R);
+    const sc = baseScales.current[i] * scaleMul;
+
+    // Billboard: orient the plane to face the origin (camera sits there).
+    _pos.set(x, y, z);
+    _dummy.position.copy(_pos);
+    _dummy.lookAt(0, 0, 0);
+    _dummy.updateMatrix();
+    _dummy.scale.set(sc, sc, sc);
+    _dummy.updateMatrix();
+    mesh.setMatrixAt(i, _dummy.matrix);
+
+    const [r, g, b] = bvToRgb(s.bv);
+    const br = baseBright.current[i] * brightMul;
+    _color.setRGB(r * br, g * br, b * br);
+    mesh.setColorAt(i, _color);
+  };
 
   useEffect(() => {
     const mesh = meshRef.current;
     if (!mesh) return;
-
+    baseScales.current = new Float32Array(count);
+    baseBright.current = new Float32Array(count);
     visibleStars.forEach((s, i) => {
-      const [x, y, z] = altAzToVec3(s.altDeg, s.azDeg, DOME_R);
       const mag = s.magnitude ?? 6;
-      const scale = STAR_SIZE * Math.max(0.35, (6 - mag) / 3);
-      _matrix.makeScale(scale, scale, scale).setPosition(x, y, z);
-      mesh.setMatrixAt(i, _matrix);
-
-      const [r, g, b] = bvToRgb(s.bv);
-      _color.setRGB(r, g, b);
-      mesh.setColorAt(i, _color);
+      baseScales.current[i] = starScale(mag);
+      baseBright.current[i] = starBrightness(mag);
+      applyInstance(i);
     });
-
     mesh.instanceMatrix.needsUpdate = true;
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     mesh.computeBoundingSphere();
-    mesh.geometry.computeBoundsTree(); // build BVH for raycast
-  }, [visibleStars]);
+    mesh.geometry.computeBoundsTree();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibleStars, count]);
 
-  // Pulse the selected star slightly so the click is visible.
+  // Hover glow + selected pulse.
   useFrame(() => {
     const mesh = meshRef.current;
-    if (!mesh || !selectionId) return;
-    const idx = visibleStars.findIndex((s) => s.id === selectionId);
-    if (idx < 0) return;
-    const s = visibleStars[idx];
-    const [x, y, z] = altAzToVec3(s.altDeg, s.azDeg, DOME_R);
-    const pulse = STAR_SIZE * 2.5 * (1 + Math.sin(Date.now() / 200) * 0.15);
-    _matrix.makeScale(pulse, pulse, pulse).setPosition(x, y, z);
-    mesh.setMatrixAt(idx, _matrix);
-    mesh.instanceMatrix.needsUpdate = true;
+    if (!mesh) return;
+
+    // Restore the previously-hovered instance to base when hover moves off.
+    if (lastHoveredRef.current !== hoveredRef.current) {
+      const prev = lastHoveredRef.current;
+      if (prev != null && prev >= 0 && prev < count && visibleStars[prev]?.id !== selectionId) {
+        applyInstance(prev);
+      }
+      lastHoveredRef.current = hoveredRef.current;
+    }
+
+    let dirty = false;
+
+    // Selected star pulses.
+    if (selectionId) {
+      const idx = visibleStars.findIndex((s) => s.id === selectionId);
+      if (idx >= 0) {
+        const pulse = 1 + Math.sin(Date.now() / 200) * 0.15;
+        applyInstance(idx, 2.5 * pulse, 1.4);
+        dirty = true;
+      }
+    }
+
+    // Hovered star enlarges + brightens.
+    const h = hoveredRef.current;
+    if (h != null && h >= 0 && h < count && visibleStars[h]?.id !== selectionId) {
+      applyInstance(h, 2.5, 1.5);
+      dirty = true;
+    }
+
+    if (dirty) {
+      mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    }
   });
 
   const handleClick = (e: ThreeEvent<MouseEvent>) => {
@@ -96,11 +148,20 @@ export function InstancedStars({
     <instancedMesh
       ref={meshRef}
       args={[undefined, undefined, count]}
+      onPointerMove={(e) => { e.stopPropagation(); hoveredRef.current = e.instanceId ?? null; }}
+      onPointerOut={() => { hoveredRef.current = null; }}
       onClick={handleClick}
       frustumCulled={false}
     >
-      <sphereGeometry args={[1, 8, 8]} />
-      <meshBasicMaterial toneMapped={false} />
+      <planeGeometry args={[1, 1]} />
+      <meshBasicMaterial
+        map={tex}
+        transparent
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+        toneMapped={false}
+        side={THREE.DoubleSide}
+      />
     </instancedMesh>
   );
 }
