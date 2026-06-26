@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
+import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import gsap from 'gsap';
 import { useZenith } from '@/store/useZenith';
 import { useSky } from '@/hooks/useSky';
@@ -142,6 +143,9 @@ export default function Page() {
             <>
               <Starfield count={1500} radius={60} />
               <SkyPlanetarium data={sky} layers={layers} selectionId={selectionId} onSelect={select} />
+              <EffectComposer>
+                <Bloom luminanceThreshold={0.3} luminanceSmoothing={0.85} intensity={0.7} radius={0.5} mipmapBlur />
+              </EffectComposer>
             </>
           )}
 
