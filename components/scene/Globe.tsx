@@ -1,9 +1,10 @@
 'use client';
 
-import { useFrame, type ThreeEvent } from '@react-three/fiber';
+import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { useTexture } from '@react-three/drei';
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
+import gsap from 'gsap';
 import { pickLocation, latLonToUnitVector } from '@/lib/geo';
 import { useZenith } from '@/store/useZenith';
 
@@ -50,6 +51,30 @@ export function Globe() {
       }),
     [],
   );
+
+  const camera = useThree((s) => s.camera);
+
+  useEffect(() => {
+    if (!pending || pending.source !== 'search') return;
+    const g = groupRef.current;
+    if (!g) return;
+    autoRotate.current = false;
+    const v = latLonToUnitVector(pending.latDeg, pending.lonDeg);
+    const localDir = new THREE.Vector3(v.x, v.y, v.z).normalize();
+    const camDir = camera.position.clone().normalize();
+    const from = g.quaternion.clone();
+    const to = new THREE.Quaternion().setFromUnitVectors(localDir, camDir);
+    const proxy = { t: 0 };
+    const tween = gsap.to(proxy, {
+      t: 1,
+      duration: 1.5,
+      ease: 'power3.inOut',
+      onUpdate: () => g.quaternion.slerpQuaternions(from, to, proxy.t),
+    });
+    return () => {
+      tween.kill();
+    };
+  }, [pending, camera]);
 
   useFrame((_, delta) => {
     if (autoRotate.current && groupRef.current) {

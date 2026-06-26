@@ -1,82 +1,55 @@
 # Project Zenith — Master-Prompt Pivot Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement each phase plan task-by-task.
-
-**Goal:** Pivot Zenith to the GLM 5.2 master-prompt stack (MapTiler globe + InstancedMesh sky planetarium + GSAP transition + GLB satellites), reusing the proven astronomy math.
-
-**Architecture:** Single `<Canvas>`, dual scene-graph, phase-driven swap (`globe` → `fly` → `sky`), GSAP camera transition across the swap, Theatre.js retained for the within-sky reveal.
-
-**Tech Stack:** Next.js 16 · React 19 · three.js 0.184 · @react-three/fiber 9 · drei 10 · MapTiler (raster + MVT buildings + terrain-rgb + geocoding) · astronomy-engine · satellite.js · gsap · three-mesh-bvh.
+**Goal:** Pivot Zenith to the master-prompt stack (MapTiler globe + InstancedMesh sky + GSAP transition + GLB satellites), reusing the proven astronomy math.
 
 **Spec:** `docs/superpowers/specs/2026-06-25-zenith-pivot-design.md`
+**Branch:** `phase5-cinematic`
 
----
+| # | Phase | Status | Plan file |
+|---|-------|--------|-----------|
+| 1 | Foundation — MapTiler proxy routes | `[x]` done (`a619175`,`57bb3ab`) | `plans/2026-06-25-phase1-foundation.md` |
+| 4 | Sky rebuild — SkyPlanetarium (InstancedMesh + BVH) | `[x]` done (`42d95b6`,`14414df`) | `plans/2026-06-25-phase4-sky-planetarium.md` |
+| A | Verification gate | `[ ]` active | this session |
+| 2 | Globe — MapTilerGlobe (search + fly-to, then 3D patch) | `[ ]` active | this session |
+| 3 | Transition — GSAP globe→sky | `[ ]` deferred | _to write_ |
+| 5 | UI + Assets — overlays + NASA GLB Draco pipeline | `[ ]` deferred | _to write_ |
 
-## Five phase plans (built in dependency order)
+## Phase 1 — Foundation (done)
+- [x] `lib/maptiler.ts` builders + `latLonToTileXY` + `.test.ts`
+- [x] `app/api/maptiler/tiles` (raster/MVT/terrain, key server-side)
+- [x] `app/api/maptiler/geocode` (forward + reverse)
+- [x] `app/api/geocode` rewired MapTiler-first → Nominatim fallback
+- [x] MapTiler types in `types/index.ts`; `.env.example`
 
-| # | Phase | Status | Plan file | Depends on |
-|---|-------|--------|-----------|------------|
-| 1 | **Foundation** — MapTiler proxy routes + `MAPTILER_KEY` + smoke-test | `[ ]` pending | `docs/superpowers/plans/2026-06-25-phase1-foundation.md` | nothing |
-| 2 | **Globe** — `MapTilerGlobe` (raster sphere + MVT buildings + terrain displacement) | `[ ]` pending | _to be written_ | Phase 1 |
-| 3 | **Transition** — `GlobeToSkyTransition` (GSAP camera timeline) | `[ ]` pending | _to be written_ | Phase 2 |
-| 4 | **Sky rebuild** — `SkyPlanetarium` (InstancedMesh stars, BVH picking, constellations, GLB satellites) | `[ ]` pending | _to be written_ | can parallel Phase 2/3 |
-| 5 | **UI + Assets** — overlay components + NASA `.glb` Draco pipeline | `[ ]` pending | _to be written_ | Phase 4 |
+## Phase 4 — Sky rebuild (done)
+- [x] `three-mesh-bvh`; `lib/starColor.ts` `bvToRgb` + `.test.ts`
+- [x] `InstancedStars.tsx` (2851 stars, per-instance color, BVH pick)
+- [x] `SkyDome.tsx` → `SkyPlanetarium.tsx`; wired in `app/page.tsx`
 
----
+## Part A — Verification gate (active)
+- [ ] A1 `tsc --noEmit` → 0
+- [ ] A2 `vitest run` → all green (~33 = 21 + 6 maptiler + 6 starColor)
+- [ ] A3 `npm run build` → ok
+- [ ] A4 `NEXT_PUBLIC_MAPTILER_KEY` present in `.env.local`
+- [ ] A5 proxy tile smoke (200 / 503-fallback)
+- [ ] A6 proxy geocode smoke
+- [ ] A7 sky InstancedMesh + BVH pick smoke
 
-## Phase 1 — Foundation checklist (granular)
+## Phase 2A — Geocoding search + GSAP fly-to (active)
+- [ ] dep `gsap`
+- [ ] `lib/maptilerClient.ts`
+- [ ] `components/ui/SearchBar.tsx`
+- [ ] `Globe.tsx` GSAP fly-to (plain-object tween + `useFrame`)
+- [ ] mount `<SearchBar/>` in `app/page.tsx`
 
-These map 1:1 to `docs/superpowers/plans/2026-06-25-phase1-foundation.md`:
+## Phase 2B — Local MapTiler 3D patch
+- [ ] deps `@mapbox/vector-tile` + `pbf`
+- [ ] `lib/mvtBuildings.ts` (+test) · `lib/terrainRgb.ts` (+test)
+- [ ] `components/scene/MapTilerPatch.tsx` (raster + terrain displace + building InstancedMesh)
+- [ ] `components/ui/Attribution.tsx`
+- [ ] LOD swap sphere↔patch; OSM fallback
 
-- [ ] Add `MAPTILER_KEY` to `.env.example` (documented as optional, with OSM fallback)
-- [ ] Add `MAPTILER_KEY` to `.env.local` (real key, server-side only)
-- [ ] Smoke-test: confirm `satellite-v4`, buildings tileset, terrain-rgb endpoints return tiles with the key
-- [ ] Create `app/api/maptiler/tiles/route.ts` — proxy raster + MVT + terrain tiles (key server-side)
-- [ ] Create `app/api/maptiler/geocode/route.ts` — proxy MapTiler Geocoding (forward + reverse)
-- [ ] Create `lib/maptiler.ts` — endpoint builders + attribution constants
-- [ ] Add MapTiler types to `types/index.ts` (`MapTilerTileResponse`, `MapTilerGeocodeResponse`)
-- [ ] Write `lib/maptiler.test.ts` — endpoint builder unit tests
-- [ ] Rewire `app/api/geocode/route.ts` to prefer MapTiler, fall back to Nominatim
-- [ ] Verify `tsc --noEmit` clean, `npm test` green
-- [ ] Commit
-
----
-
-## Phase 2 — Globe checklist (to be planned in detail when Phase 1 lands)
-
-- [ ] `components/scene/MapTilerGlobe.tsx` — sphere with raster-tile texture, raycast→lat/lon via existing `pickLocation()`
-- [ ] MVT building layer → extruded InstancedMesh, fades in at zoom z ≥ 14
-- [ ] Terrain-RGB vertex displacement
-- [ ] Fresnel atmosphere (preserved from existing Globe.tsx)
-- [ ] SearchBar → MapTiler geocode → GSAP camera fly-to coords
-- [ ] Attribution UI: "© MapTiler © OpenStreetMap"
-- [ ] OSM-raster fallback when MapTiler quota exceeded
-
-## Phase 3 — Transition checklist (to be planned when Phase 2 lands)
-
-- [ ] Add `gsap` dependency
-- [ ] `components/scene/GlobeToSkyTransition.tsx` — GSAP timeline (~2.5s): dolly, tilt, FOV widen, skybox fade
-- [ ] Extend `app/page.tsx` phase router with `fly` phase
-- [ ] Dispose globe meshes on `phase='sky'`
-- [ ] Theatre.js within-sky reveal plays after transition completes
-
-## Phase 4 — Sky rebuild checklist (to be planned)
-
-- [ ] Add `three-mesh-bvh` dependency
-- [ ] `components/scene/SkyPlanetarium.tsx` — replaces SkyDome.tsx
-- [ ] `InstancedStars` — 2851 stars via `altAzToVec3` (math unchanged)
-- [ ] `three-mesh-bvh` raycast for sub-pixel star picking
-- [ ] `ConstellationLines` via drei `<Line>`
-- [ ] `ConstellationArt` proximity-fade
-- [ ] `Bodies` (Sun/Moon/planets) billboard sprites
-- [ ] `SatMarker` → `SatModel` LOD swap
-- [ ] Delete `components/scene/SkyDome.tsx`
-
-## Phase 5 — UI + Assets checklist (to be planned)
-
-- [ ] `ObjectInfoOverlay` — name/distance/facts on raycast click
-- [ ] `SidebarNav` — 3-dot drawer, searchable index, snap-camera
-- [ ] `ViewModeToggle` — Static Horizon ↔ Free Roam
-- [ ] `scripts/prepare-models.mjs` — download NASA ISS/Hubble, license-check, convert, Draco-encode → `/public/models/`
-- [ ] DracoDecoder bundled to `/public/draco/`
-- [ ] Rewire `LocationCard`/`OverheadPanel`/`LayerControls`/`Hud` to new sky
+## Deferred
+- Phase 3 single-canvas + GSAP globe→sky (replaces two-Canvas + Theatre handoff)
+- Phase 5 NASA ISS/Hubble Draco GLB, `SatMarker→SatModel` LOD, selective B-V bloom
+- UI overlays §4.4 — `ObjectInfoOverlay`, `SidebarNav`, `ViewModeToggle`

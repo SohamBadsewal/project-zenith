@@ -10,7 +10,7 @@ export interface ObserverLocation {
   elevationM: number; // metres above sea level (0 if unknown)
   placeName?: string; // reverse-geocoded, e.g. "Mumbai, IN"
   timezone?: string; // IANA tz, e.g. "Asia/Kolkata"
-  source: 'globe' | 'map' | 'geolocation';
+  source: 'globe' | 'map' | 'geolocation' | 'search';
 }
 
 export interface SimTime {

@@ -11,6 +11,7 @@ import { SkyPlanetarium, type Layers } from '@/components/scene/SkyPlanetarium';
 import { CinematicCamera } from '@/components/scene/CinematicCamera';
 import { Hud } from '@/components/ui/Hud';
 import { LocationCard } from '@/components/ui/LocationCard';
+import { SearchBar } from '@/components/ui/SearchBar';
 import { LayerControls } from '@/components/ui/LayerControls';
 import { OverheadPanel } from '@/components/ui/OverheadPanel';
 import { formatLatLon } from '@/lib/geo';
@@ -141,6 +142,7 @@ export default function Page() {
           {phase === 'globe' && (
             <>
               <Hud />
+              <SearchBar />
               <LocationCard />
             </>
           )}
