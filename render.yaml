@@ -1,0 +1,22 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+# Connect this repo in the Render dashboard and choose "Apply Blueprint",
+# or create a Web Service manually with the settings below.
+
+services:
+  - type: web
+    name: project-zenith
+    runtime: node
+    plan: free
+    region: oregon
+    branch: phase5-cinematic
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      # Optional: 3D globe tiles, buildings, terrain, and MapTiler geocoding.
+      # Free tier: https://cloud.maptiler.com (100k tile loads/mo).
+      # Without this key the app falls back to OSM raster tiles.
+      - key: NEXT_PUBLIC_MAPTILER_KEY
+        sync: false
