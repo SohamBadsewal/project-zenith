@@ -101,6 +101,8 @@ export default function Page() {
     if (phase !== 'globe') return;
     // Fade the darkness away as the camera descends out of space toward Earth.
     if (overlayRef.current) overlayRef.current.style.opacity = '0';
+    // Fade out the space hum since the rocket transition is complete!
+    audio.fadeHum(2.0);
   }, [phase]);
 
   useEffect(() => {

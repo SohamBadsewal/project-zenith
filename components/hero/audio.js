@@ -178,5 +178,20 @@ class AudioEngine {
     out.gain.setTargetAtTime(0.18, this.ctx.currentTime, 1.5);
     this.hum = { out, noise, pad };
   }
+  fadeHum(seconds = 1.0) {
+    if (!this.hum) return;
+    const t = this.ctx.currentTime;
+    this.hum.out.gain.cancelScheduledValues(t);
+    this.hum.out.gain.setValueAtTime(Math.max(0.0001, this.hum.out.gain.value), t);
+    this.hum.out.gain.exponentialRampToValueAtTime(0.0001, t + seconds);
+    const self = this;
+    setTimeout(() => {
+      if (self.hum) {
+        try { self.hum.noise.stop(); } catch (e) {}
+        try { self.hum.pad.stop(); } catch (e) {}
+        self.hum = null;
+      }
+    }, seconds * 1000 + 100);
+  }
 }
 export const audio = new AudioEngine();
