@@ -28,6 +28,21 @@ function formatPlace(addr?: NominatimAddress): string | undefined {
   return locality ?? addr.country;
 }
 
+function transliterateCyrillic(str: string): string {
+  const map: Record<string, string> = {
+    'А': 'A', 'а': 'a', 'Б': 'B', 'б': 'b', 'В': 'V', 'в': 'v', 'Г': 'G', 'г': 'g',
+    'Д': 'D', 'д': 'd', 'Е': 'E', 'е': 'e', 'Ё': 'Yo', 'ё': 'yo', 'Ж': 'Zh', 'ж': 'zh',
+    'З': 'Z', 'з': 'z', 'И': 'I', 'и': 'i', 'Й': 'Y', 'й': 'y', 'К': 'K', 'к': 'k',
+    'Л': 'L', 'л': 'l', 'М': 'M', 'м': 'm', 'Н': 'N', 'н': 'n', 'О': 'O', 'о': 'o',
+    'П': 'P', 'п': 'p', 'Р': 'R', 'р': 'r', 'С': 'S', 'с': 's', 'Т': 'T', 'т': 't',
+    'У': 'U', 'у': 'u', 'Ф': 'F', 'ф': 'f', 'Х': 'Kh', 'х': 'kh', 'Ц': 'Ts', 'ц': 'ts',
+    'Ч': 'Ch', 'ч': 'ch', 'Ш': 'Sh', 'ш': 'sh', 'Щ': 'Shch', 'щ': 'shch', 'Ъ': '', 'ъ': '',
+    'Ы': 'Y', 'ы': 'y', 'Ь': '', 'ь': '', 'Э': 'E', 'э': 'e', 'Ю': 'Yu', 'ю': 'yu',
+    'Я': 'Ya', 'я': 'ya'
+  };
+  return str.split('').map(char => map[char] ?? char).join('');
+}
+
 export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
   const lat = parseFloat(sp.get('lat') ?? '');
@@ -43,40 +58,46 @@ export async function GET(req: NextRequest) {
     /* leave timezone undefined */
   }
 
-  // Try MapTiler first (key lives in /api/maptiler/geocode, browser stays keyless).
+  // 1. Try MapTiler first (key lives in /api/maptiler/geocode, browser stays keyless).
+  // MapTiler has high-fidelity transliterations and translations to English.
   try {
-    const r = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=10&accept-language=en`,
-      {
-        headers: { 'User-Agent': 'ProjectZenith/1.0 (hackathon demo; reverse geocode)' },
-        cache: 'no-store',
-      },
-    );
-    if (r.ok) {
-      const j = (await r.json()) as { address?: NominatimAddress };
-      out.placeName = formatPlace(j.address);
+    const key = process.env.MAPTILER_KEY ?? process.env.NEXT_PUBLIC_MAPTILER_KEY;
+    const base = key
+      ? `https://api.maptiler.com/geocoding/${lon},${lat}.json?key=${key}&language=en`
+      : null;
+    if (base) {
+      const r = await fetch(base, { cache: 'no-store' });
+      if (r.ok) {
+        const j = (await r.json()) as { features?: { place_name?: string }[] };
+        out.placeName = j.features?.[0]?.place_name;
+      }
     }
   } catch {
-    /* non-fatal — coordinates-only card */
+    /* fallback to Nominatim */
   }
 
-  // Fallback: MapTiler geocoding (if a key is configured).
+  // 2. Fallback: Nominatim geocoding.
   if (!out.placeName) {
     try {
-      const key = process.env.MAPTILER_KEY ?? process.env.NEXT_PUBLIC_MAPTILER_KEY;
-      const base = key
-        ? `https://api.maptiler.com/geocoding/${lon},${lat}.json?key=${key}&language=en`
-        : null;
-      if (base) {
-        const r = await fetch(base, { cache: 'no-store' });
-        if (r.ok) {
-          const j = (await r.json()) as { features?: { place_name?: string }[] };
-          out.placeName = j.features?.[0]?.place_name;
-        }
+      const r = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=10&accept-language=en`,
+        {
+          headers: { 'User-Agent': 'ProjectZenith/1.0 (hackathon demo; reverse geocode)' },
+          cache: 'no-store',
+        },
+      );
+      if (r.ok) {
+        const j = (await r.json()) as { address?: NominatimAddress };
+        out.placeName = formatPlace(j.address);
       }
     } catch {
-      /* non-fatal — keep whatever Nominatim gave */
+      /* non-fatal — coordinates-only card */
     }
+  }
+
+  // 3. Guarantee Cyrillic/Russian characters are transliterated to English
+  if (out.placeName) {
+    out.placeName = transliterateCyrillic(out.placeName);
   }
 
   const response = NextResponse.json(out);
