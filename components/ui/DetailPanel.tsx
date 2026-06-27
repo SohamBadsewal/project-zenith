@@ -42,12 +42,12 @@ export function DetailPanel({ info, sidebarOpen }: { info: FocusInfo | null; sid
     >
       {/* Header — shared between states, drives the layout morph. */}
       <motion.div layout="position" className="shrink-0 px-5 pt-4">
-        <div className="font-sans text-3xl font-medium leading-tight text-[var(--interactive)] sm:text-4xl">
+        <div className="font-doto text-3xl font-medium leading-tight text-[var(--interactive)] sm:text-4xl">
           {info.name}
         </div>
-        <div className="mt-1 font-mono text-[13px] text-[var(--text-secondary)]">{info.subtitle}</div>
+        <div className="mt-1 font-doto text-[13px] text-[var(--text-secondary)]">{info.subtitle}</div>
         {info.blurb && (
-          <div className="mt-2 font-mono text-[12px] leading-relaxed text-[var(--text-disabled)]">
+          <div className="mt-2 font-doto text-[12px] leading-relaxed text-[var(--text-disabled)]">
             {info.blurb}
           </div>
         )}
@@ -59,14 +59,14 @@ export function DetailPanel({ info, sidebarOpen }: { info: FocusInfo | null; sid
           {expanded ? (
             <button
               onClick={() => setExpanded(false)}
-              className="rounded-full border border-[var(--border-visible)] bg-[var(--surface-raised)] px-4 py-1.5 font-mono text-[11px] font-bold uppercase tracking-wider text-[var(--interactive)] shadow-[0_0_8px_rgba(91,155,246,0.25)] transition-all hover:bg-[var(--interactive)] hover:text-white hover:shadow-[0_0_14px_rgba(91,155,246,0.5)]"
+              className="rounded-full border border-[var(--border-visible)] bg-[var(--surface-raised)] px-4 py-1.5 font-doto text-[11px] font-bold uppercase tracking-wider text-[var(--interactive)] shadow-[0_0_8px_rgba(91,155,246,0.25)] transition-all hover:bg-[var(--interactive)] hover:text-white hover:shadow-[0_0_14px_rgba(91,155,246,0.5)]"
             >
               ▼ Collapse
             </button>
           ) : (
             <button
               onClick={() => setExpanded(true)}
-              className="rounded-full border border-[var(--border-visible)] bg-[var(--surface-raised)] px-4 py-1.5 font-mono text-[11px] font-bold uppercase tracking-wider text-[var(--interactive)] shadow-[0_0_8px_rgba(91,155,246,0.25)] transition-all hover:bg-[var(--interactive)] hover:text-white hover:shadow-[0_0_14px_rgba(91,155,246,0.5)] cursor-pointer"
+              className="rounded-full border border-[var(--border-visible)] bg-[var(--surface-raised)] px-4 py-1.5 font-doto text-[11px] font-bold uppercase tracking-wider text-[var(--interactive)] shadow-[0_0_8px_rgba(91,155,246,0.25)] transition-all hover:bg-[var(--interactive)] hover:text-white hover:shadow-[0_0_14px_rgba(91,155,246,0.5)] cursor-pointer"
             >
               ▲ More info
             </button>
@@ -87,7 +87,7 @@ export function DetailPanel({ info, sidebarOpen }: { info: FocusInfo | null; sid
             {rich ? (
               <RichBody rich={rich} reduce={!!reduce} />
             ) : (
-              shortFact && <p className="font-sans text-[13px] leading-relaxed text-[var(--text-primary)]">{shortFact}</p>
+              shortFact && <p className="font-doto text-[13px] leading-relaxed text-[var(--text-primary)]">{shortFact}</p>
             )}
           </motion.div>
         ) : (
@@ -100,7 +100,7 @@ export function DetailPanel({ info, sidebarOpen }: { info: FocusInfo | null; sid
             className="px-5 pb-4 pt-3"
           >
             {shortFact && (
-              <p className="font-sans text-[12px] leading-relaxed text-[var(--text-primary)] line-clamp-2">
+              <p className="font-doto text-[12px] leading-relaxed text-[var(--text-primary)] line-clamp-2">
                 {shortFact}
               </p>
             )}
@@ -121,7 +121,7 @@ function RichBody({ rich, reduce }: { rich: ObjectInfo; reduce: boolean }) {
     <div className="space-y-4">
       <HeroImage key={rich.image ?? rich.fallbackImage ?? 'none'} src={rich.image} fallback={rich.fallbackImage} credit={rich.credit} />
 
-      <motion.p {...stagger(0)} className="font-sans text-[14px] leading-relaxed text-[var(--text-primary)]">
+      <motion.p {...stagger(0)} className="font-doto text-[14px] leading-relaxed text-[var(--text-primary)]">
         {rich.summary}
       </motion.p>
 
@@ -129,25 +129,25 @@ function RichBody({ rich, reduce }: { rich: ObjectInfo; reduce: boolean }) {
         <motion.div {...stagger(1)} className="grid grid-cols-2 gap-x-4 gap-y-2 border-y border-[var(--border)] py-3">
           {rich.stats.map((s) => (
             <div key={s.label}>
-              <div className="font-mono text-[9px] uppercase tracking-wider text-[var(--text-secondary)]">{s.label}</div>
-              <div className="font-mono text-[12px] text-[var(--text-primary)]">{s.value}</div>
+              <div className="font-doto text-[9px] uppercase tracking-wider text-[var(--text-secondary)]">{s.label}</div>
+              <div className="font-doto text-[12px] text-[var(--text-primary)]">{s.value}</div>
             </div>
           ))}
         </motion.div>
       )}
 
       {rich.paragraphs.map((p, i) => (
-        <motion.p key={i} {...stagger(2 + i)} className="font-sans text-[13px] leading-relaxed text-[var(--text-secondary)]">
+        <motion.p key={i} {...stagger(2 + i)} className="font-doto text-[13px] leading-relaxed text-[var(--text-secondary)]">
           {p}
         </motion.p>
       ))}
 
       {rich.facts.length > 0 && (
         <motion.div {...stagger(2 + rich.paragraphs.length)}>
-          <div className="font-mono text-[10px] uppercase tracking-wider text-[var(--text-secondary)]">Did you know</div>
+          <div className="font-doto text-[10px] uppercase tracking-wider text-[var(--text-secondary)]">Did you know</div>
           <ul className="mt-2 space-y-1.5">
             {rich.facts.map((f) => (
-              <li key={f} className="flex gap-2 font-sans text-[13px] leading-relaxed text-[var(--text-primary)]">
+              <li key={f} className="flex gap-2 font-doto text-[13px] leading-relaxed text-[var(--text-primary)]">
                 <span className="text-[var(--interactive)]">›</span>
                 <span>{f}</span>
               </li>
@@ -161,7 +161,7 @@ function RichBody({ rich, reduce }: { rich: ObjectInfo; reduce: boolean }) {
           href={rich.source.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-block font-mono text-[10px] uppercase tracking-wider text-[var(--text-disabled)] underline-offset-2 hover:text-[var(--interactive)] hover:underline"
+          className="inline-block font-doto text-[10px] uppercase tracking-wider text-[var(--text-disabled)] underline-offset-2 hover:text-[var(--interactive)] hover:underline"
         >
           Source: {rich.source.label} ↗
         </a>
@@ -196,7 +196,7 @@ function HeroImage({ src, fallback, credit }: { src?: string; fallback?: string;
         }}
       />
       {credit && (
-        <div className="absolute bottom-0 right-0 bg-black/55 px-1.5 py-0.5 font-mono text-[8px] text-white/70">
+        <div className="absolute bottom-0 right-0 bg-black/55 px-1.5 py-0.5 font-doto text-[8px] text-white/70">
           {credit}
         </div>
       )}
