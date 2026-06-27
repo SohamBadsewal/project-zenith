@@ -42,12 +42,12 @@ export function terrainTileUrl(lat: number, lon: number, z: number, key: string)
 
 /** Forward geocode (place name → coords). */
 export function geocodeForwardUrl(query: string, key: string): string {
-  return `${BASE}/geocoding/${encodeURIComponent(query)}.json?key=${key}`;
+  return `${BASE}/geocoding/${encodeURIComponent(query)}.json?key=${key}&language=en`;
 }
 
 /** Reverse geocode (coords → place name). MapTiler order is lon,lat. */
 export function geocodeReverseUrl(lat: number, lon: number, key: string): string {
-  return `${BASE}/geocoding/${lon},${lat}.json?key=${key}`;
+  return `${BASE}/geocoding/${lon},${lat}.json?key=${key}&language=en`;
 }
 
 /** Direct z/x/y raster tile URL (for the proxy route). */

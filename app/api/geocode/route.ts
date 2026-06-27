@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
   // Try MapTiler first (key lives in /api/maptiler/geocode, browser stays keyless).
   try {
     const r = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=10`,
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=10&accept-language=en`,
       {
         headers: { 'User-Agent': 'ProjectZenith/1.0 (hackathon demo; reverse geocode)' },
         next: { revalidate: 86400 },
@@ -65,7 +65,7 @@ export async function GET(req: NextRequest) {
     try {
       const key = process.env.MAPTILER_KEY ?? process.env.NEXT_PUBLIC_MAPTILER_KEY;
       const base = key
-        ? `https://api.maptiler.com/geocoding/${lon},${lat}.json?key=${key}`
+        ? `https://api.maptiler.com/geocoding/${lon},${lat}.json?key=${key}&language=en`
         : null;
       if (base) {
         const r = await fetch(base, { next: { revalidate: 86400 } });
