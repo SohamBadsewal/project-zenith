@@ -75,8 +75,8 @@ export function HeroHud() {
             </p>
             
             {/* Mobile landscape/desktop suggestion warning */}
-            <div className="mt-6 block sm:hidden font-doto text-[12px] leading-relaxed text-[var(--interactive)] uppercase tracking-[0.18em] animate-pulse select-none px-4">
-              [ Rotate to Landscape or use Desktop for the best experience ]
+            <div className="mt-6 block sm:hidden font-doto text-[11px] leading-relaxed text-[var(--interactive)] uppercase tracking-[0.16em] animate-pulse select-none px-4">
+              [ Rotate to landscape and use desktop view in browser for the best experience ]
             </div>
 
             <div className="pointer-events-auto mt-8 flex flex-col items-center">
