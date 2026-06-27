@@ -103,8 +103,10 @@ export function HeroHud() {
           className={`absolute inset-0 z-30 touch-none ${launch === 'dragging' ? 'cursor-grabbing' : 'cursor-grab'}`}
         >
           <div className="pointer-events-none absolute inset-x-0 bottom-14 flex flex-col items-center text-center">
-            <div className="font-doto text-[16px] sm:text-[18px] font-bold uppercase tracking-[0.24em] text-[var(--interactive)] animate-pulse">
-              Drag upward to build thrust
+            <div className="inline-block bg-black/40 backdrop-blur-md border border-white/10 px-8 py-3.5 rounded-lg shadow-[0_4px_30px_rgba(0,0,0,0.4)] select-none">
+              <div className="font-doto text-[17px] sm:text-[19px] font-black uppercase tracking-[0.24em] text-[var(--interactive)] animate-pulse">
+                Drag upward to build thrust
+              </div>
             </div>
           </div>
 
