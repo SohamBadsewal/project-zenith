@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const r = await fetch(url, { next: { revalidate: 86400 } });
+    const r = await fetch(url, { cache: 'no-store' });
     if (!r.ok) throw new Error(`maptiler geocode ${r.status}`);
     const j = (await r.json()) as { features?: RawFeature[] };
     const features: MapTilerGeocodeFeature[] = (j.features ?? []).map((f) => ({

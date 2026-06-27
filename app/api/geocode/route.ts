@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
       `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=10&accept-language=en`,
       {
         headers: { 'User-Agent': 'ProjectZenith/1.0 (hackathon demo; reverse geocode)' },
-        next: { revalidate: 86400 },
+        cache: 'no-store',
       },
     );
     if (r.ok) {
@@ -68,7 +68,7 @@ export async function GET(req: NextRequest) {
         ? `https://api.maptiler.com/geocoding/${lon},${lat}.json?key=${key}&language=en`
         : null;
       if (base) {
-        const r = await fetch(base, { next: { revalidate: 86400 } });
+        const r = await fetch(base, { cache: 'no-store' });
         if (r.ok) {
           const j = (await r.json()) as { features?: { place_name?: string }[] };
           out.placeName = j.features?.[0]?.place_name;
