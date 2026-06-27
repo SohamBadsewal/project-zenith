@@ -102,16 +102,10 @@ export function HeroHud() {
           onPointerCancel={onUp}
           className={`absolute inset-0 z-30 touch-none ${launch === 'dragging' ? 'cursor-grabbing' : 'cursor-grab'}`}
         >
-          <div className="pointer-events-none absolute inset-x-0 bottom-14 flex flex-col items-center gap-4 text-center">
-            <div className="font-mono text-[12px] uppercase tracking-[0.28em] text-[color:rgba(180,200,225,0.6)]">
+          <div className="pointer-events-none absolute inset-x-0 bottom-14 flex flex-col items-center text-center">
+            <div className="font-doto text-[16px] sm:text-[18px] font-bold uppercase tracking-[0.24em] text-[var(--interactive)] animate-pulse">
               Drag upward to build thrust
             </div>
-            <button
-              onClick={autoThrust}
-              className="pointer-events-auto h-10 border border-white/20 bg-white/[0.06] px-5 font-mono text-[12px] uppercase tracking-[0.12em] text-white backdrop-blur-sm transition-colors hover:border-white/40"
-            >
-              ▲ Tap to ignite
-            </button>
           </div>
 
           <div
