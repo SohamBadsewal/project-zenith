@@ -8,7 +8,7 @@ services:
     runtime: node
     plan: free
     region: oregon
-    branch: phase5-cinematic
+    branch: master
     buildCommand: npm ci && npm run build
     startCommand: npm start
     healthCheckPath: /
