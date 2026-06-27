@@ -63,8 +63,9 @@ export async function GET(req: NextRequest) {
   // Fallback: MapTiler geocoding (if a key is configured).
   if (!out.placeName) {
     try {
-      const base = process.env.NEXT_PUBLIC_MAPTILER_KEY
-        ? `https://api.maptiler.com/geocoding/${lon},${lat}.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`
+      const key = process.env.MAPTILER_KEY ?? process.env.NEXT_PUBLIC_MAPTILER_KEY;
+      const base = key
+        ? `https://api.maptiler.com/geocoding/${lon},${lat}.json?key=${key}`
         : null;
       if (base) {
         const r = await fetch(base, { next: { revalidate: 86400 } });

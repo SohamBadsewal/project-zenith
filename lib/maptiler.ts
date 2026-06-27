@@ -92,5 +92,5 @@ export function latLonToTileXY(lat: number, lon: number, z: number): { x: number
 
 /** Read the key server-side; returns '' if unset (triggers fallback). */
 export function readKey(): string {
-  return process.env.NEXT_PUBLIC_MAPTILER_KEY ?? '';
+  return process.env.MAPTILER_KEY ?? process.env.NEXT_PUBLIC_MAPTILER_KEY ?? '';
 }
