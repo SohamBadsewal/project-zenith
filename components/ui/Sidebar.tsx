@@ -12,14 +12,17 @@ export function Sidebar({
   data,
   selectionId,
   onSelect,
+  open,
+  setOpen,
 }: {
   layers: Layers;
   setLayers: (l: Layers) => void;
   data: SkyData;
   selectionId: string | null;
   onSelect: (id: string | null) => void;
+  open: boolean;
+  setOpen: (o: boolean | ((v: boolean) => boolean)) => void;
 }) {
-  const [open, setOpen] = useState(true);
 
   return (
     <>
@@ -27,7 +30,7 @@ export function Sidebar({
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? 'Close panel' : 'Open panel'}
         aria-expanded={open}
-        className="absolute left-4 top-16 z-40 flex h-10 w-10 items-center justify-center border border-[var(--border-visible)] bg-[var(--surface)] font-mono text-[16px] text-[var(--text-primary)] transition-colors hover:text-white sm:left-6"
+        className="absolute left-4 top-4 z-40 flex h-10 w-10 items-center justify-center border border-[var(--border-visible)] bg-[var(--surface)] font-mono text-[16px] text-[var(--text-primary)] transition-colors hover:text-white sm:left-6 sm:top-6"
       >
         {open ? '✕' : '☰'}
       </button>

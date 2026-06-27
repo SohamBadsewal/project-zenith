@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { useZenith } from '@/store/useZenith';
 import { smokeVertex, smokeFragment } from './smoke';
 
-const COUNT = 1400;
+const COUNT = 750;
 
 function makeSprite() {
   const s = 64;

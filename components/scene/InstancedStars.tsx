@@ -140,15 +140,14 @@ export function InstancedStars({
     onSelect(id === selectionId ? null : id);
   };
 
-  if (!visible) return null;
-
   return (
     <instancedMesh
       ref={meshRef}
+      visible={visible}
       args={[undefined, undefined, count]}
-      onPointerMove={(e) => { e.stopPropagation(); hoveredRef.current = e.instanceId ?? null; }}
+      onPointerMove={(e) => { if (!visible) return; e.stopPropagation(); hoveredRef.current = e.instanceId ?? null; }}
       onPointerOut={() => { hoveredRef.current = null; }}
-      onClick={handleClick}
+      onClick={(e) => { if (!visible) return; handleClick(e); }}
       frustumCulled={false}
     >
       <planeGeometry args={[1, 1]} />

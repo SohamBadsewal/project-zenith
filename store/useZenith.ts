@@ -6,7 +6,7 @@ import { nowSimTime, clampScrub } from '@/lib/time';
 export type Phase = 'launch' | 'warp' | 'globe' | 'descent' | 'sky';
 export type LaunchPhase = 'idle' | 'magnifying' | 'armed' | 'dragging' | 'launched';
 export type Status = 'idle' | 'loading' | 'live' | 'offlineData' | 'error';
-export type ViewMode = 'static' | 'freeroam';
+export type ViewMode = 'static' | 'freeroam' | 'freeview';
 
 export interface ZenithStore {
   phase: Phase;
@@ -21,6 +21,7 @@ export interface ZenithStore {
   selectionId: string | null;
   viewMode: ViewMode;
   sky: SkyState | null;
+  globeIntro: boolean;
 
   setPhase: (p: Phase) => void;
   beginLaunch: (rect: DOMRect) => void;
@@ -31,6 +32,7 @@ export interface ZenithStore {
   fireLaunch: () => void;
   enterWarp: () => void;
   enterGlobe: () => void;
+  finishGlobeIntro: () => void;
   pickLocation: (loc: ObserverLocation) => void;
   confirmLocation: () => void;
   clearPending: () => void;
@@ -55,6 +57,7 @@ export const useZenith = create<ZenithStore>((set, get) => ({
   selectionId: null,
   viewMode: 'static',
   sky: null,
+  globeIntro: true,
 
   setPhase: (phase) => set({ phase }),
   beginLaunch: (rect) => get().launch === 'idle' && set({ launch: 'magnifying', shuttleRect: rect }),
@@ -72,7 +75,8 @@ export const useZenith = create<ZenithStore>((set, get) => ({
   releaseDrag: () => get().launch === 'dragging' && set({ launch: 'armed', tension: 0 }),
   fireLaunch: () => set({ launch: 'launched', tension: 1, launchedAt: performance.now() }),
   enterWarp: () => set({ phase: 'warp' }),
-  enterGlobe: () => set({ phase: 'globe' }),
+  enterGlobe: () => set({ phase: 'globe', globeIntro: true }),
+  finishGlobeIntro: () => set({ globeIntro: false }),
   pickLocation: (pending) => set({ pending }),
   confirmLocation: () =>
     set((s) => (s.pending ? { observer: s.pending, pending: null, phase: 'descent' } : {})),
@@ -95,6 +99,7 @@ export const useZenith = create<ZenithStore>((set, get) => ({
       selectionId: null,
       viewMode: 'static',
       sky: null,
+      globeIntro: true,
       time: nowSimTime(),
     }),
 }));

@@ -1,0 +1,241 @@
+.container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 200px;
+  height: 200px;
+  color: rgb(131, 131, 131);
+  transition: 400ms ease-in-out;
+  transform: translateY(20px);
+  cursor: pointer;
+}
+
+/* Fade + sink away once the launch sequence takes over (rocket has magnified). */
+.hidden {
+  opacity: 0;
+  transform: translateY(80px) scale(0.6);
+  pointer-events: none;
+  transition: opacity 600ms ease, transform 800ms cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+
+.shuttleWrapper {
+  position: absolute;
+  opacity: 0;
+  transition: 200ms ease-in;
+  z-index: 200;
+}
+
+.b {
+  width: 80px;
+  height: auto;
+  z-index: 200;
+}
+
+.shadow {
+  position: absolute;
+  width: 100px;
+  height: 80px;
+  transform: rotateX(45deg) rotateZ(45deg);
+  bottom: -10px;
+  z-index: -1;
+  background: radial-gradient(rgba(0, 0, 0, 0.382) 0%, rgba(0, 0, 0, 0) 70%);
+}
+
+.clickHandler {
+  display: block;
+  position: absolute;
+  inset: 0;
+  z-index: 999;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+.clickHandler:focus-visible {
+  outline: 2px solid var(--interactive, #5b9bf6);
+  outline-offset: 4px;
+  border-radius: 1.8rem;
+}
+
+.container:hover .shuttleWrapper {
+  opacity: 1;
+  transform: translateY(-100px) translateZ(140px);
+  transition: 400ms ease-in-out;
+}
+
+.clickHandler:hover ~ .button,
+.clickHandler:focus-visible ~ .button {
+  width: 200px;
+  height: 200px;
+  transform: translate3d(0px, -16px, 0px) rotateX(51deg) rotateZ(43deg);
+  box-shadow: 2px 2px 0 2px #b2b2b2, -1px 0 28px 0 rgba(255, 250, 225, 0.512), 28px 28px 28px 0 rgba(28, 27, 88, 0.315);
+  transition-delay: 0ms;
+}
+
+.container:hover {
+  transform: translateY(30%);
+}
+
+.toLaunch {
+  color: rgb(1, 85, 255);
+  font-size: large;
+  font-weight: bold;
+  transition: ease-out 200ms;
+}
+
+.toHover {
+  margin-top: 1em;
+  text-align: center;
+  transition: ease-out 200ms;
+  font-family: var(--font-mono, monospace);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 11px;
+}
+
+.platform {
+  position: absolute;
+  width: 70%;
+  height: 0;
+  border-radius: 16px;
+  background-color: rgb(234, 234, 234);
+  transition: 0.3s ease-in-out;
+  transition-delay: 150ms;
+  border: solid 0px rgba(42, 42, 42, 0);
+  outline: dashed rgba(255, 173, 57, 0);
+  outline-width: 0px;
+  outline-offset: 0px;
+}
+
+.clickHandler:hover ~ .button .platform,
+.clickHandler:focus-visible ~ .button .platform {
+  height: 70%;
+  background: rgb(244, 244, 244);
+  border: solid 4px rgb(42, 42, 42);
+  outline: dashed rgb(255, 172, 57);
+  outline-width: 4px;
+  outline-offset: -4px;
+  animation: lb-shake 80ms infinite;
+}
+
+.caution {
+  position: absolute;
+  width: 100%;
+  text-align: center;
+}
+
+.cautionLeft {
+  transition: 200ms ease;
+  opacity: 0;
+  transform: translate3d(83px, 0px, 0px) rotateZ(-90deg);
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  font-size: 0.8rem;
+  color: #ffd66a;
+}
+
+.cautionRight {
+  transition: 200ms ease;
+  opacity: 0;
+  transform: translate3d(0px, 62px, 0px);
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  font-size: 0.8rem;
+  color: #ffd66a;
+}
+
+.clickHandler:hover ~ .button .caution .cautionLeft,
+.clickHandler:hover ~ .button .caution .cautionRight,
+.clickHandler:focus-visible ~ .button .caution .cautionLeft,
+.clickHandler:focus-visible ~ .button .caution .cautionRight {
+  opacity: 1;
+  transition: 400ms ease-in;
+  animation: lb-glow 1.2s infinite;
+}
+
+.button {
+  position: relative;
+  width: 200px;
+  height: 80px;
+  border: none;
+  border-radius: 1.8rem;
+  transition: 0.4s ease-in-out;
+  box-shadow: 5px 5px 8px 0 rgba(28, 27, 88, 0.315);
+  background: linear-gradient(125deg, #ffffff 50%, #f5f5ff);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: inherit;
+  transition-delay: 100ms;
+  animation: lb-pulse 2.4s ease-in-out infinite;
+}
+
+.clickHandler:hover ~ .button,
+.clickHandler:focus-visible ~ .button {
+  animation: none;
+}
+
+.clickHandler:hover ~ .button .toLaunch,
+.clickHandler:focus-visible ~ .button .toLaunch {
+  opacity: 0;
+}
+
+.clickHandler:hover ~ .toHover,
+.clickHandler:focus-visible ~ .toHover {
+  opacity: 0;
+}
+
+@keyframes lb-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(1, 85, 255, 0.45), 5px 5px 8px 0 rgba(28, 27, 88, 0.315);
+  }
+  50% {
+    box-shadow: 0 0 36px 6px rgba(1, 85, 255, 0.35), 5px 5px 8px 0 rgba(28, 27, 88, 0.315);
+  }
+}
+
+@keyframes lb-shake {
+  0%, 50% {
+    transform: translate3d(1px, 0px, 0px);
+  }
+  100% {
+    transform: translate3d(0px, 1px, 0px);
+  }
+}
+
+@keyframes lb-glow {
+  0% {
+    color: rgb(94, 94, 94);
+    filter: drop-shadow(0 0 0.75rem rgb(255, 214, 90));
+  }
+  70% {
+    color: rgba(255, 255, 255, 0);
+  }
+  100% {
+    color: rgb(94, 94, 94);
+    filter: drop-shadow(0 0 0.75rem rgb(255, 214, 90));
+  }
+}
+
+.noselect {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .container,
+  .shuttleWrapper,
+  .button,
+  .platform,
+  .cautionLeft,
+  .cautionRight {
+    transition-duration: 1ms !important;
+    animation: none !important;
+  }
+}

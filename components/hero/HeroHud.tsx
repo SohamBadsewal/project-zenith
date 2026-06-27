@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { useZenith } from '@/store/useZenith';
-import { audio } from './audio';
+import { LaunchButton } from './LaunchButton';
 
 const dragWindow = () => Math.max(280, window.innerHeight * 0.42);
 const prefersReduced = () =>
@@ -11,21 +11,14 @@ const prefersReduced = () =>
 export function HeroHud() {
   const launch = useZenith((s) => s.launch);
   const tension = useZenith((s) => s.tension);
-  const beginLaunch = useZenith((s) => s.beginLaunch);
   const armDrag = useZenith((s) => s.armDrag);
   const setTension = useZenith((s) => s.setTension);
   const releaseDrag = useZenith((s) => s.releaseDrag);
 
-  const btnRef = useRef<HTMLButtonElement>(null);
   const startY = useRef(0);
   const raf = useRef(0);
 
   useEffect(() => () => cancelAnimationFrame(raf.current), []);
-
-  const onIgniteCta = () => {
-    audio.resume();
-    beginLaunch(btnRef.current!.getBoundingClientRect());
-  };
 
   const onDown = (e: React.PointerEvent) => {
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
@@ -58,28 +51,39 @@ export function HeroHud() {
 
   if (launch === 'launched') return null;
 
-  const showIntro = launch === 'idle';
+  const showIntro = launch === 'idle' || launch === 'magnifying';
   const showDrag = launch === 'armed' || launch === 'dragging';
 
   return (
     <>
       {showIntro && (
-        <div className="pointer-events-none absolute inset-0 z-30 flex flex-col justify-center p-8 sm:p-16">
-          <div className="max-w-lg">
-            <div className="label text-[var(--text-secondary)]">Project Zenith</div>
-            <h1 className="mt-3 font-sans text-4xl font-medium leading-tight text-white sm:text-6xl" style={{ textWrap: 'balance' }}>
+        <div
+          className={`pointer-events-none absolute inset-0 z-30 flex flex-col items-center justify-center p-8 text-center transition-opacity duration-700 ease-out sm:p-16 ${
+            launch === 'magnifying' ? 'opacity-0' : 'opacity-100'
+          }`}
+        >
+          <div className="flex flex-col items-center">
+            <div className="font-doto text-[var(--interactive)] text-3xl sm:text-5xl lg:text-6xl tracking-[0.2em] font-bold uppercase mb-4">Project Zenith</div>
+            <h1
+              className="mt-3 text-4xl font-bold leading-tight text-white sm:text-6xl lg:text-7xl"
+              style={{ fontFamily: 'var(--font-doto), monospace', textWrap: 'balance', letterSpacing: '0.04em' }}
+            >
               Begin the ascent
             </h1>
-            <p className="mt-4 max-w-md font-sans text-base leading-relaxed text-[var(--text-secondary)]" style={{ textWrap: 'pretty' }}>
+            <p className="mt-6 max-w-lg font-doto text-[16px] sm:text-[18px] leading-relaxed text-white/80 tracking-[0.04em]" style={{ textWrap: 'pretty' }}>
               Launch to orbit, then choose any point on Earth to read the sky passing through its zenith right now.
             </p>
-            <button
-              ref={btnRef}
-              onClick={onIgniteCta}
-              className="pointer-events-auto mt-8 h-12 border border-white/20 bg-white/[0.06] px-7 font-mono text-[13px] uppercase tracking-[0.08em] text-white backdrop-blur-sm transition-colors duration-300 ease-out hover:border-white/40"
-            >
-              Initiate launch ▸
-            </button>
+            <div className="pointer-events-auto mt-8 flex flex-col items-center">
+              <LaunchButton />
+              <div
+                className="mt-4 animate-pulse font-mono text-[11px] uppercase tracking-[0.22em] text-white/50"
+              >
+                ↑ hover over the button ↑
+              </div>
+            </div>
+          </div>
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 font-doto text-[14px] uppercase tracking-[0.22em] text-white/65 whitespace-nowrap select-none pointer-events-none">
+            Press F11 to full screen for enhanced experience
           </div>
         </div>
       )}

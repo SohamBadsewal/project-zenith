@@ -7,6 +7,10 @@ import { computeBodies, computeStars, raDecToAltAz } from '@/lib/ephemeris';
 import { propagateAll, propagateSatellite, satId } from '@/lib/satellites';
 
 const ISS_NORAD = 25544;
+const HST_NORAD = 20580;
+/** The two satellites we always render as full 3D models (ISS + Hubble). */
+const isHeroSat = (s: SatelliteState) =>
+  s.noradId === ISS_NORAD || s.noradId === HST_NORAD || s.name.includes('ISS') || /HST|HUBBLE/i.test(s.name);
 const ORBIT_STEP_MS = 2 * 60 * 1000; // 2-minute steps
 const ORBIT_STEPS = 45; // covers ~90 min (one orbit)
 
@@ -234,8 +238,10 @@ export function useSky(): SkyData {
 
       let satellites = propagateAll(tlesRef.current, obs, date, prevElev.current);
       prevElev.current = new Map(satellites.map((s) => [s.noradId, s.elevationDeg]));
+      // Always keep the two hero satellites (ISS 25544, Hubble 20580) even below the
+      // horizon so they render as full 3D models; everything else needs to be up.
       satellites = satellites
-        .filter((s) => s.aboveHorizon || s.name.includes('ISS'))
+        .filter((s) => s.aboveHorizon || isHeroSat(s))
         .sort((a, b) => b.elevationDeg - a.elevationDeg)
         .slice(0, MAX_SATS);
 

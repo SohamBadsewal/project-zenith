@@ -1,10 +1,11 @@
 'use client';
 
-import { Suspense, Component, useRef, type ReactNode } from 'react';
-import { useTexture } from '@react-three/drei';
-import { useFrame, type ThreeEvent } from '@react-three/fiber';
+import { Suspense, Component, useEffect, useMemo, useRef, type ReactNode } from 'react';
+import { useTexture, Billboard } from '@react-three/drei';
+import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { CelestialObject } from '@/types';
+import { sunSurfaceTexture, sunGlowTexture } from '@/lib/sunTexture';
 
 const TEX: Record<string, string> = {
   'planet:mars': '/textures/planets/mars.jpg',
@@ -42,12 +43,29 @@ class AssetBoundary extends Component<{ fallback: ReactNode; children: ReactNode
   }
 }
 
-function TexturedSphere({ url, radius }: { url: string; radius: number }) {
+function TexturedSphere({ url, radius, color }: { url: string; radius: number; color: string }) {
   const map = useTexture(url);
+  const { gl } = useThree();
+
+  useEffect(() => {
+    if (map) {
+      map.anisotropy = Math.min(gl.capabilities.getMaxAnisotropy(), 16);
+      map.minFilter = THREE.LinearMipmapLinearFilter;
+      map.magFilter = THREE.LinearFilter;
+      map.needsUpdate = true;
+    }
+  }, [map, gl]);
+
   return (
     <mesh>
       <sphereGeometry args={[radius, 48, 48]} />
-      <meshStandardMaterial map={map} roughness={1} metalness={0} />
+      <meshStandardMaterial
+        map={map}
+        roughness={0.4}
+        metalness={0.1}
+        emissive={color}
+        emissiveIntensity={0.18}
+      />
     </mesh>
   );
 }
@@ -64,6 +82,44 @@ function PlainSphere({ radius, color, emissive }: { radius: number; color: strin
         emissiveIntensity={emissive ? 1.1 : 0}
       />
     </mesh>
+  );
+}
+
+/** High-quality procedural Sun: granulated photosphere (emissive, so it blooms)
+ *  wrapped in a soft additive corona that always faces the camera. */
+function SunSphere({ radius }: { radius: number }) {
+  const surface = useMemo(() => sunSurfaceTexture(), []);
+  const glow = useMemo(() => sunGlowTexture(), []);
+  const surfRef = useRef<THREE.Mesh>(null);
+  useFrame((_, dt) => {
+    if (surfRef.current) surfRef.current.rotation.y += dt * 0.04;
+  });
+  return (
+    <group>
+      <mesh ref={surfRef}>
+        <sphereGeometry args={[radius, 64, 64]} />
+        <meshStandardMaterial
+          map={surface}
+          emissive={'#ffffff'}
+          emissiveMap={surface}
+          emissiveIntensity={1.5}
+          toneMapped={false}
+          roughness={1}
+          metalness={0}
+        />
+      </mesh>
+      <Billboard>
+        <sprite scale={[radius * 6, radius * 6, 1]}>
+          <spriteMaterial
+            map={glow}
+            transparent
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+            opacity={0.9}
+          />
+        </sprite>
+      </Billboard>
+    </group>
   );
 }
 
@@ -88,7 +144,7 @@ export function PlanetModel({
   onClick: (e: ThreeEvent<MouseEvent>) => void;
 }) {
   const ref = useRef<THREE.Group>(null);
-  const radius = RADIUS[body.kind === 'sun' ? 'sun' : body.kind === 'moon' ? 'moon' : body.id] ?? 0.13;
+  const radius = RADIUS[body.kind === 'sun' ? 'sun' : body.kind === 'moon' ? 'moon' : body.id] ?? 0.12;
   const url = TEX[body.id];
   const color = COLOR[body.id] ?? COLOR[body.kind] ?? '#cccccc';
   const isSun = body.kind === 'sun';
@@ -104,12 +160,16 @@ export function PlanetModel({
 
   return (
     <group ref={ref} onClick={onClick}>
-      {isSun || !url ? (
+      {isSun ? (
+        <AssetBoundary fallback={fallback}>
+          <SunSphere radius={radius} />
+        </AssetBoundary>
+      ) : !url ? (
         fallback
       ) : (
         <AssetBoundary fallback={fallback}>
           <Suspense fallback={fallback}>
-            <TexturedSphere url={url} radius={radius} />
+            <TexturedSphere url={url} radius={radius} color={color} />
           </Suspense>
         </AssetBoundary>
       )}

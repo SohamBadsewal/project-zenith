@@ -35,22 +35,33 @@ function GltfModel({ url }: { url: string }) {
   return <primitive object={obj} />;
 }
 
+const _v = new THREE.Vector3();
+
 export function SatModel({
   iss,
   glbUrl,
+  selected = false,
   onClick,
 }: {
   iss: boolean;
   glbUrl?: string;
+  selected?: boolean;
   onClick: (e: ThreeEvent<MouseEvent>) => void;
 }) {
   const ref = useRef<THREE.Group>(null);
+  // The GLB is normalised to ~2 units; these factors keep the whole craft a
+  // readable size in the dome and let it grow when you settle on it.
+  const base = glbUrl ? 0.32 : 0.42;
+  const target = selected ? base * 1.8 : base;
   useFrame((_, dt) => {
-    if (ref.current) ref.current.rotation.y += dt * 0.45;
+    const g = ref.current;
+    if (!g) return;
+    g.rotation.y += dt * (selected ? 0.3 : 0.5); // always rotating; calmer when inspected
+    g.scale.lerp(_v.setScalar(target), 0.12);
   });
   const proc = iss ? <IssBody /> : <GenericSat />;
   return (
-    <group ref={ref} scale={glbUrl ? 0.85 : 0.5} onClick={onClick}>
+    <group ref={ref} scale={base} onClick={onClick}>
       {glbUrl ? (
         <GltfBoundary fallback={proc}>
           <Suspense fallback={proc}>

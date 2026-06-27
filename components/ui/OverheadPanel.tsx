@@ -40,7 +40,7 @@ export function OverheadPanel({
 }) {
   const rows = useMemo<Row[]>(() => {
     const bodies: Row[] = data.bodies
-      .filter((b) => b.aboveHorizon && (b.kind !== 'star' || (b.magnitude ?? 9) < 1.5))
+      .filter((b) => b.aboveHorizon && (b.kind === 'sun' || b.kind === 'moon' || b.kind === 'planet'))
       .map((b) => ({
         id: b.id,
         name: b.name,
@@ -50,7 +50,7 @@ export function OverheadPanel({
         color: KIND_COLOR[b.kind] ?? 'var(--text-primary)',
       }));
     const sats: Row[] = data.satellites
-      .filter((s) => s.aboveHorizon)
+      .filter((s) => s.aboveHorizon && (s.noradId === 25544 || s.noradId === 20580))
       .map((s) => ({
         id: satId(s.noradId),
         name: s.name.replace(/\s*\(.*\)$/, ''),
@@ -64,7 +64,7 @@ export function OverheadPanel({
     return [...bodies, ...sats].sort((a, b) => b.altDeg - a.altDeg);
   }, [data]);
 
-  const satCount = data.satellites.filter((s) => s.aboveHorizon).length;
+  const satCount = data.satellites.filter((s) => s.aboveHorizon && (s.noradId === 25544 || s.noradId === 20580)).length;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">

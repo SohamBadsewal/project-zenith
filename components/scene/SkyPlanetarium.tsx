@@ -1,10 +1,11 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { Billboard, Line } from '@react-three/drei';
 import * as THREE from 'three';
 import { altAzToVec3, circlePoints } from '@/lib/dome';
+import { raDecToAltAz } from '@/lib/ephemeris';
 import { satId, type SkyData, type IssOrbitPoint } from '@/hooks/useSky';
 import type { CelestialObject, SatelliteState } from '@/types';
 import { InstancedStars } from './InstancedStars';
@@ -14,6 +15,7 @@ import { Constellations } from './Constellations';
 import { ConstellationArt } from './ConstellationArt';
 import { Trajectory } from './Trajectory';
 import { DeepSkyObjects } from './DeepSkyObjects';
+import { MilkyWay } from './MilkyWay';
 import { bodyTrajectory, satTrajectory, type TrajectoryPoint } from '@/lib/trajectory';
 import { DSOS } from '@/hooks/useSky';
 import { effectiveEpochMs } from '@/lib/time';
@@ -39,7 +41,22 @@ export interface FocusInfo {
 }
 
 const KIND_LABEL: Record<string, string> = { sun: 'Star · our Sun', moon: 'Moon', planet: 'Planet', star: 'Star' };
-const isHiFiSat = (s: SatelliteState) => s.name.includes('ISS') || /HST|HUBBLE/i.test(s.name);
+const DSO_LABEL: Record<string, string> = {
+  spiral: 'Spiral galaxy', elliptical: 'Elliptical galaxy', irregular: 'Galaxy',
+  globular: 'Globular cluster', cluster: 'Open cluster', nebula: 'Nebula',
+};
+const ISS_NORAD = 25544;
+const HST_NORAD = 20580;
+const isIssSat = (s: SatelliteState) => s.noradId === ISS_NORAD || s.name.includes('ISS');
+const isHstSat = (s: SatelliteState) => s.noradId === HST_NORAD || /HST|HUBBLE/i.test(s.name);
+
+/** Exactly one ISS and one Hubble, preferring their canonical NORAD ids. Guards
+ *  against catalogue duplicates (the ISS appears in several CelesTrak groups). */
+function pickHeroSats(all: SatelliteState[]): SatelliteState[] {
+  const iss = all.find((s) => s.noradId === ISS_NORAD) ?? all.find(isIssSat);
+  const hst = all.find((s) => s.noradId === HST_NORAD) ?? all.find(isHstSat);
+  return [iss, hst].filter((s): s is SatelliteState => Boolean(s));
+}
 
 type Cand = { id: string; vec: THREE.Vector3; info: FocusInfo };
 
@@ -57,8 +74,22 @@ export function SkyPlanetarium({
   onFocus: (info: FocusInfo | null) => void;
 }) {
   const [focusId, setFocusId] = useState<string | null>(null);
+
+  // Clear stale focus when the focused object's layer gets toggled off.
+  useEffect(() => {
+    if (!focusId) return;
+    if (focusId.startsWith('star:') && !layers.stars) { setFocusId(null); onFocus(null); }
+    if (focusId.startsWith('dso:') && !layers.stars) { setFocusId(null); onFocus(null); }
+    if (focusId.startsWith('con:') && !layers.constellations) { setFocusId(null); onFocus(null); }
+    if ((focusId.startsWith('planet:') || focusId === 'sun' || focusId === 'moon') && !layers.planets) { setFocusId(null); onFocus(null); }
+    if (focusId.startsWith('sat:') && !layers.satellites) { setFocusId(null); onFocus(null); }
+  }, [focusId, layers, onFocus]);
   const starSelection = selectionId?.startsWith('star:') ? selectionId : null;
-  const sats = useMemo(() => data.satellites.filter(isHiFiSat), [data.satellites]);
+  const sats = useMemo(() => pickHeroSats(data.satellites), [data.satellites]);
+
+  // Observer + effective time — must be declared before any memo that uses them.
+  const observer = useZenith((s) => s.observer);
+  const dateMs = effectiveEpochMs(useZenith((s) => s.time));
 
   const objCands = useMemo<Cand[]>(() => {
     const out: Cand[] = [];
@@ -75,10 +106,20 @@ export function SkyPlanetarium({
     if (layers.satellites)
       for (const s of sats) {
         const id = satId(s.noradId);
-        out.push({ id, vec: v(s.elevationDeg, s.azDeg), info: { id, name: cleanSat(s.name), subtitle: /HST|HUBBLE/i.test(s.name) ? 'Space telescope' : 'Satellite', blurb: satLines(s) } });
+        out.push({ id, vec: v(s.elevationDeg, s.azDeg), info: { id, name: cleanSat(s.name), subtitle: isHstSat(s) ? 'Space telescope' : 'Satellite', blurb: satLines(s) } });
       }
+    if (layers.stars && observer) {
+      const date = new Date(dateMs);
+      for (const d of DSOS) {
+        const { altDeg, azDeg } = raDecToAltAz(d.raDeg, d.decDeg, observer, date);
+        if (altDeg <= 0) continue;
+        const [x, y, z] = altAzToVec3(altDeg, azDeg, 1);
+        const id = `dso:${d.id}`;
+        out.push({ id, vec: new THREE.Vector3(x, y, z), info: { id, name: d.name, subtitle: DSO_LABEL[d.type] ?? 'Deep-sky object', blurb: d.fact } });
+      }
+    }
     return out;
-  }, [data.bodies, data.stars, sats, layers]);
+  }, [data.bodies, data.stars, sats, layers, observer, dateMs]);
 
   const conCands = useMemo<Cand[]>(() => {
     const blurbs = new Map(data.art.map((a) => [a.id, a.blurb]));
@@ -98,11 +139,7 @@ export function SkyPlanetarium({
       .filter(Boolean) as Cand[];
   }, [data.constellations, data.art]);
 
-  const focusStar = focusId?.startsWith('star:') ? data.stars.find((s) => s.id === focusId) : null;
-
-  // Observer + effective time for trajectory + DSO projection.
-  const observer = useZenith((s) => s.observer);
-  const dateMs = effectiveEpochMs(useZenith((s) => s.time));
+  const focusStar = (focusId?.startsWith('star:') && layers.stars) ? data.stars.find((s) => s.id === focusId) : null;
 
   // Compute trajectory for the selected body/satellite.
   const trajectoryPts = useMemo<TrajectoryPoint[]>(() => {
@@ -120,10 +157,14 @@ export function SkyPlanetarium({
 
   return (
     <group>
+      {observer && layers.stars && <MilkyWay observer={observer} dateMs={dateMs} />}
+      {observer && layers.stars && <DeepSkyObjects dsos={DSOS} observer={observer} dateMs={dateMs} />}
+
       <ambientLight intensity={0.22} />
       <SunLight bodies={data.bodies} />
 
       <FocusScan objCands={objCands} conCands={conCands} layers={layers} setFocusId={setFocusId} onFocus={onFocus} />
+      <CameraTracker selectionId={selectionId} data={data} dateMs={dateMs} />
 
       <InstancedStars stars={data.stars} visible={layers.stars} selectionId={starSelection} onSelect={onSelect} />
 
@@ -156,22 +197,18 @@ export function SkyPlanetarium({
 
       {layers.satellites &&
         sats.map((s) => {
-          const isISS = s.name.includes('ISS');
+          const isISS = isIssSat(s);
           const glbUrl = isISS ? '/models/iss.glb' : '/models/hubble.glb';
           const id = satId(s.noradId);
           const selected = selectionId === id;
           return (
             <group key={id} position={altAzToVec3(s.elevationDeg, s.azDeg, DOME_R)}>
-              {selected ? (
-                <SatModel iss={isISS} glbUrl={glbUrl} onClick={(e) => { e.stopPropagation(); onSelect(null); }} />
-              ) : (
-                <Billboard>
-                  <mesh onClick={(e) => { e.stopPropagation(); onSelect(id); }}>
-                    <circleGeometry args={[0.07, 18]} />
-                    <meshBasicMaterial color="#cfd6e0" />
-                  </mesh>
-                </Billboard>
-              )}
+              <SatModel
+                iss={isISS}
+                glbUrl={glbUrl}
+                selected={selected}
+                onClick={(e) => { e.stopPropagation(); onSelect(selected ? null : id); }}
+              />
             </group>
           );
         })}
@@ -296,3 +333,142 @@ function IssOrbitTrack({ points }: { points: IssOrbitPoint[] }) {
     </>
   );
 }
+
+function CameraTracker({ selectionId, data, dateMs }: { selectionId: string | null; data: SkyData; dateMs: number }) {
+  const { camera, controls } = useThree();
+  const observer = useZenith((s) => s.observer);
+  const targetVec = useRef<THREE.Vector3 | null>(null);
+
+  // When selectionId changes, calculate its direction vector
+  useEffect(() => {
+    if (!selectionId || !observer) {
+      targetVec.current = null;
+      return;
+    }
+
+    let altDeg = 0;
+    let azDeg = 0;
+    let found = false;
+
+    if (selectionId.startsWith('star:')) {
+      const s = data.stars.find((star) => star.id === selectionId);
+      if (s) {
+        altDeg = s.altDeg;
+        azDeg = s.azDeg;
+        found = true;
+      }
+    } else if (selectionId.startsWith('planet:') || selectionId === 'sun' || selectionId === 'moon') {
+      const b = data.bodies.find((body) => body.id === selectionId);
+      if (b) {
+        altDeg = b.altDeg;
+        azDeg = b.azDeg;
+        found = true;
+      }
+    } else if (selectionId.startsWith('sat:')) {
+      const norad = Number(selectionId.slice(4));
+      const s = data.satellites.find((sat) => sat.noradId === norad);
+      if (s) {
+        altDeg = s.elevationDeg;
+        azDeg = s.azDeg;
+        found = true;
+      }
+    } else if (selectionId.startsWith('dso:')) {
+      const dsoId = selectionId.slice(4);
+      const dso = DSOS.find((d) => d.id === dsoId);
+      if (dso) {
+        const date = new Date(dateMs);
+        const projected = raDecToAltAz(dso.raDeg, dso.decDeg, observer, date);
+        altDeg = projected.altDeg;
+        azDeg = projected.azDeg;
+        found = true;
+      }
+    } else if (selectionId.startsWith('con:')) {
+      const conId = selectionId.slice(4);
+      const con = data.constellations.find((c) => c.id === conId);
+      if (con) {
+        const dir = new THREE.Vector3();
+        let n = 0;
+        for (const path of con.paths) {
+          for (const [alt, az] of path) {
+            const [ux, uy, uz] = altAzToVec3(alt, az, 1);
+            dir.add(new THREE.Vector3(ux, uy, uz));
+            n++;
+          }
+        }
+        if (n > 0) {
+          dir.normalize();
+          targetVec.current = dir;
+          return;
+        }
+      }
+    }
+
+    if (found) {
+      const [x, y, z] = altAzToVec3(altDeg, azDeg, 1);
+      targetVec.current = new THREE.Vector3(x, y, z).normalize();
+    } else {
+      targetVec.current = null;
+    }
+  }, [selectionId, data, observer, dateMs]);
+
+  // Listen to dragging gestures when selectionId is active, releasing camera tracking if dragged.
+  useEffect(() => {
+    if (!selectionId) return;
+
+    let startX = 0;
+    let startY = 0;
+    let isDown = false;
+    let triggered = false;
+
+    const onPointerDown = (e: PointerEvent) => {
+      startX = e.clientX;
+      startY = e.clientY;
+      isDown = true;
+      triggered = false;
+    };
+
+    const onPointerMove = (e: PointerEvent) => {
+      if (!isDown || triggered) return;
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      // 22px is a perfect drag threshold - not too sensitive, not too stubborn
+      if (dist > 22) {
+        triggered = true;
+        useZenith.getState().select(null);
+      }
+    };
+
+    const onPointerUp = () => {
+      isDown = false;
+    };
+
+    window.addEventListener('pointerdown', onPointerDown);
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+
+    return () => {
+      window.removeEventListener('pointerdown', onPointerDown);
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+    };
+  }, [selectionId]);
+
+  // Smoothly lerp camera position to point at targetVec
+  useFrame(() => {
+    if (!targetVec.current) return;
+    const r = camera.position.length();
+    // target camera position is -V * r
+    const targetCamPos = targetVec.current.clone().multiplyScalar(-r);
+    camera.position.lerp(targetCamPos, 0.08);
+    camera.lookAt(0, 0, 0);
+    if (controls) {
+      // @ts-ignore
+      controls.update();
+    }
+  });
+
+  return null;
+}
+

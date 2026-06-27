@@ -19,7 +19,7 @@ function enhanceMaterials(scene: THREE.Object3D) {
     const mesh = o as THREE.Mesh;
     if (!mesh.isMesh) return;
     mesh.castShadow = true;
-    mesh.receiveShadow = true;
+    mesh.receiveShadow = false;
     const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
     mats.forEach((mm) => {
       const m = mm as THREE.MeshStandardMaterial;

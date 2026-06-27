@@ -11,7 +11,7 @@ export function EnvironmentRig() {
         intensity={3.8}
         color="#fff6e8"
         castShadow
-        shadow-mapSize={[2048, 2048]}
+        shadow-mapSize={[1024, 1024]}
         shadow-camera-near={1}
         shadow-camera-far={120}
         shadow-camera-left={-25}
@@ -21,8 +21,8 @@ export function EnvironmentRig() {
       />
       <directionalLight position={[-14, 6, -10]} intensity={0.4} color="#7a9bff" />
       <hemisphereLight intensity={0.15} groundColor="#0a0d18" color="#1a2444" />
-      <Stars radius={220} depth={80} count={8000} factor={4.5} saturation={0} fade speed={0.5} />
-      <Sparkles count={150} scale={[70, 70, 70]} size={2.2} speed={0.15} color="#cfe0ff" opacity={0.45} />
+      <Stars radius={220} depth={80} count={3000} factor={4.5} saturation={0} fade speed={0.5} />
+      <Sparkles count={60} scale={[70, 70, 70]} size={2.2} speed={0.15} color="#cfe0ff" opacity={0.45} />
     </>
   );
 }

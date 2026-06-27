@@ -1,14 +1,9 @@
 [
-  { "id": "M31",  "name": "Andromeda Galaxy",   "type": "spiral",   "raDeg": 10.6847,  "decDeg": 41.2691, "sizeArcmin": 190, "fact": "The Andromeda Galaxy is the closest large galaxy to the Milky Way and on a collision course with us — the two will merge in ~4.5 billion years." },
-  { "id": "LMC",  "name": "Large Magellanic Cloud", "type": "irregular", "raDeg": 80.8942, "decDeg": -69.7561, "sizeArcmin": 645, "fact": "A satellite galaxy of the Milky Way, visible to the naked eye in the southern sky. Host to the 1987A supernova." },
-  { "id": "SMC",  "name": "Small Magellanic Cloud", "type": "irregular", "raDeg": 13.1583, "decDeg": -72.8003, "sizeArcmin": 320, "fact": "The smaller companion of the LMC; together they were used by mariners as a crude clock and compass." },
   { "id": "M42",  "name": "Orion Nebula",       "type": "nebula",   "raDeg": 83.8221,  "decDeg": -5.3911, "sizeArcmin": 85, "fact": "The Orion Nebula is a stellar nursery ~1,344 ly away — one of the few where newborn stars can be seen forming." },
   { "id": "M45",  "name": "Pleiades",           "type": "cluster",  "raDeg": 56.7500,  "decDeg": 24.1167, "sizeArcmin": 110, "fact": "The Pleiades (Seven Sisters) is an open cluster of hot blue stars wrapped in reflection nebulosity — actually hundreds of stars, not seven." },
   { "id": "M44",  "name": "Beehive Cluster",    "type": "cluster",  "raDeg": 130.0250, "decDeg": 19.6700, "sizeArcmin": 95, "fact": "The Beehive (Praesepe) is one of the nearest open clusters to Earth, ~577 ly away, known since antiquity." },
   { "id": "M13",  "name": "Hercules Cluster",   "type": "globular", "raDeg": 250.4235, "decDeg": 36.4603, "sizeArcmin": 20, "fact": "A globular cluster of several hundred thousand stars, ~22,000 ly away, packed into a ball 150 ly across." },
   { "id": "M57",  "name": "Ring Nebula",        "type": "nebula",   "raDeg": 283.3962, "decDeg": 33.0292, "sizeArcmin": 1.4, "fact": "The Ring Nebula is the dying shell of a Sun-like star; its central white dwarf is visible at the centre." },
-  { "id": "M81",  "name": "Bode's Galaxy",      "type": "spiral",   "raDeg": 148.8883, "decDeg": 69.0653, "sizeArcmin": 26, "fact": "A grand-design spiral galaxy ~12 million ly away, interacting with its neighbour M82." },
-  { "id": "M51",  "name": "Whirlpool Galaxy",   "type": "spiral",   "raDeg": 202.4696, "decDeg": 47.1953, "sizeArcmin": 11, "fact": "The Whirlpool is a face-on spiral whose sweeping arms were the first evidence that galaxies rotate." },
   { "id": "M22",  "name": "Sagittarius Cluster","type": "globular", "raDeg": 279.0996, "decDeg": -23.9049, "sizeArcmin": 32, "fact": "One of the brightest globular clusters, visible to the naked eye near the galactic centre." },
   { "id": "NGC869","name": "Double Cluster",    "type": "cluster",  "raDeg": 34.7425, "decDeg": 57.1490, "sizeArcmin": 29, "fact": "A pair of neighbouring open clusters in Perseus, a stunning binocular target." }
 ]

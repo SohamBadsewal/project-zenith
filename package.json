@@ -2,10 +2,13 @@
   "name": "project-zenith",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build --webpack",
-    "start": "next start",
+    "start": "next start -H 0.0.0.0",
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -17,6 +20,7 @@
     "@react-three/postprocessing": "^3.0.4",
     "@theatre/core": "^0.7.2",
     "astronomy-engine": "^2.1.19",
+    "framer-motion": "^12.42.0",
     "gsap": "^3.15.0",
     "next": "16.2.9",
     "react": "19.2.4",

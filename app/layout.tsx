@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Space_Grotesk, Space_Mono } from 'next/font/google';
+import { Space_Grotesk, Space_Mono, Doto } from 'next/font/google';
 import './globals.css';
 
 const grotesk = Space_Grotesk({
@@ -14,6 +14,12 @@ const mono = Space_Mono({
   weight: ['400', '700'],
 });
 
+const doto = Doto({
+  variable: '--font-doto',
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
+});
+
 export const metadata: Metadata = {
   title: 'Project Zenith — The Celestial Eye',
   description:
@@ -24,7 +30,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${grotesk.variable} ${mono.variable}`}>
+    <html lang="en" className={`${grotesk.variable} ${mono.variable} ${doto.variable}`}>
       <body className="min-h-screen bg-black text-zinc-200 antialiased">
         {children}
       </body>
