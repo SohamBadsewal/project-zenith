@@ -73,6 +73,12 @@ export function HeroHud() {
             <p className="mt-6 max-w-lg font-doto text-[16px] sm:text-[18px] leading-relaxed text-white/80 tracking-[0.04em]" style={{ textWrap: 'pretty' }}>
               Launch to orbit, then choose any point on Earth to read the sky passing through its zenith right now.
             </p>
+            
+            {/* Mobile landscape/desktop suggestion warning */}
+            <div className="mt-6 block sm:hidden font-doto text-[12px] leading-relaxed text-[var(--interactive)] uppercase tracking-[0.18em] animate-pulse select-none px-4">
+              [ Rotate to Landscape or use Desktop for the best experience ]
+            </div>
+
             <div className="pointer-events-auto mt-8 flex flex-col items-center">
               <LaunchButton />
               <div
