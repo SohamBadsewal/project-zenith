@@ -15,7 +15,6 @@ import { Constellations } from './Constellations';
 import { ConstellationArt } from './ConstellationArt';
 import { Trajectory } from './Trajectory';
 import { DeepSkyObjects } from './DeepSkyObjects';
-import { MilkyWay } from './MilkyWay';
 import { bodyTrajectory, satTrajectory, type TrajectoryPoint } from '@/lib/trajectory';
 import { DSOS } from '@/hooks/useSky';
 import { effectiveEpochMs } from '@/lib/time';
@@ -157,7 +156,6 @@ export function SkyPlanetarium({
 
   return (
     <group>
-      {observer && layers.stars && <MilkyWay observer={observer} dateMs={dateMs} />}
       {observer && layers.stars && <DeepSkyObjects dsos={DSOS} observer={observer} dateMs={dateMs} />}
 
       <ambientLight intensity={0.22} />
