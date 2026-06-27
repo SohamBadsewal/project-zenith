@@ -256,10 +256,12 @@ export default function Page() {
             <>
               <button
                 onClick={goBack}
-                className="absolute right-4 top-4 z-40 flex h-10 w-10 items-center justify-center border border-[var(--border-visible)] bg-[var(--surface)] font-mono text-[var(--text-primary)] transition-colors hover:text-white sm:right-6 sm:top-6"
+                className="absolute right-4 top-4 z-40 flex h-10 px-4 items-center justify-center gap-1.5 border border-[var(--border-visible)] bg-[var(--surface)] font-doto text-[13px] font-bold tracking-[0.16em] text-white hover:text-[var(--interactive)] transition-all sm:right-6 sm:top-6"
+                style={{ borderRadius: 6 }}
                 aria-label="Back to globe"
               >
-                ‹
+                <span className="text-[16px] leading-none">‹</span>
+                <span>BACK</span>
               </button>
               
               <SkySearch data={sky} layers={layers} setLayers={setLayers} onSelect={select} />
