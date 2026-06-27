@@ -74,6 +74,17 @@ export function SkySearch({
   const [q, setQ] = useState('');
   const [results, setResults] = useState<SearchItem[]>([]);
   const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, []);
 
   // Build the static + dynamic index of searchable objects
   const searchIndex = useMemo<SearchItem[]>(() => {
@@ -194,6 +205,17 @@ export function SkySearch({
     setResults(scored.slice(0, 6));
   }, [q, searchIndex]);
 
+  const recommendedItems = useMemo<SearchItem[]>(() => {
+    const targets = ['sat:25544', 'sat:20580', 'planet:neptune', 'planet:venus'];
+    return targets
+      .map((tId) => searchIndex.find((item) => item.id === tId))
+      .filter((item): item is SearchItem => !!item);
+  }, [searchIndex]);
+
+  const showSuggestions = open && (q.trim() === '' ? recommendedItems.length > 0 : results.length > 0);
+  const listToRender = q.trim() === '' ? recommendedItems : results;
+  const isRecommended = q.trim() === '';
+
   const choose = (item: SearchItem) => {
     // Make sure the target layer is turned on so the user can see it!
     const updatedLayers = { ...layers };
@@ -211,7 +233,7 @@ export function SkySearch({
   };
 
   return (
-    <div className="absolute left-1/2 top-4 z-20 w-[380px] max-w-[calc(100vw-8.5rem)] -translate-x-1/2 transition-all sm:top-6">
+    <div ref={containerRef} className="absolute left-1/2 top-4 z-20 w-[380px] max-w-[calc(100vw-8.5rem)] -translate-x-1/2 transition-all sm:top-6">
       <div className="relative flex items-center border border-zinc-700 bg-[#1a1a1a]/95 backdrop-blur-md shadow-[0_0_20px_rgba(255,255,255,0.06),0_6px_30px_rgba(0,0,0,0.8)] focus-within:border-[var(--interactive)] focus-within:shadow-[0_0_20px_rgba(91,155,246,0.4)] transition-all duration-300" style={{ borderRadius: 6 }}>
         <span className="pl-4 text-[var(--interactive)] font-mono text-[14px]">⌕</span>
         <input
@@ -230,9 +252,14 @@ export function SkySearch({
           </button>
         )}
       </div>
-      {open && results.length > 0 && (
+      {showSuggestions && (
         <ul className="mt-1 max-h-[280px] overflow-auto border border-zinc-700 bg-[#1a1a1a]/95 backdrop-blur-md shadow-[0_8px_32px_rgba(0,0,0,0.8)]" style={{ borderRadius: 6 }}>
-          {results.map((item, i) => (
+          {isRecommended && (
+            <div className="px-4 py-2 border-b border-zinc-800 text-[10px] uppercase font-mono tracking-[0.16em] text-[var(--interactive)] select-none">
+              Recommended Targets
+            </div>
+          )}
+          {listToRender.map((item, i) => (
             <li key={`${item.id}-${i}`} className="border-b border-[var(--border)] last:border-0">
               <button
                 onClick={() => choose(item)}
