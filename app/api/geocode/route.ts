@@ -79,5 +79,7 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  return NextResponse.json(out);
+  const response = NextResponse.json(out);
+  response.headers.set('Cache-Control', 'no-store, max-age=0, must-revalidate');
+  return response;
 }

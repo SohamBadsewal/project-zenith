@@ -51,15 +51,19 @@ export async function GET(req: NextRequest) {
       placeType: f.place_type ?? [],
       relevance: f.relevance ?? 0,
     }));
-    return NextResponse.json({
+    const response = NextResponse.json({
       features,
       source: 'maptiler',
     } satisfies MapTilerGeocodeResponse);
+    response.headers.set('Cache-Control', 'no-store, max-age=0, must-revalidate');
+    return response;
   } catch {
     // Non-fatal: empty features, caller falls back.
-    return NextResponse.json({
+    const response = NextResponse.json({
       features: [],
       source: 'maptiler',
     } satisfies MapTilerGeocodeResponse);
+    response.headers.set('Cache-Control', 'no-store, max-age=0, must-revalidate');
+    return response;
   }
 }
