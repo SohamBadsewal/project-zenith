@@ -183,7 +183,7 @@ export default function Page() {
           )}
           {showSky && (
             <EffectComposer>
-              <Bloom luminanceThreshold={0.3} luminanceSmoothing={0.85} intensity={0.7} radius={0.5} mipmapBlur />
+              <Bloom luminanceThreshold={0.8} luminanceSmoothing={0.6} intensity={0.5} radius={0.4} mipmapBlur />
             </EffectComposer>
           )}
 

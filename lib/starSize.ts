@@ -5,9 +5,9 @@
 // Brighter → larger. Linear ramp on a clamped magnitude range: monotonic by
 // construction, so ordering always holds regardless of input.
 const FAINT_MAG = 5.0;
-const BRIGHT_MAG = -2.0;
-const MIN_SCALE = 0.3;
-const MAX_SCALE = 2.5;
+const BRIGHT_MAG = -1.5;
+const MIN_SCALE = 0.05;
+const MAX_SCALE = 0.17;
 
 /** Apparent visual magnitude → instance scale. Lower mag (brighter) → larger. */
 export function starScale(mag: number): number {
@@ -16,8 +16,8 @@ export function starScale(mag: number): number {
   return MIN_SCALE + (MAX_SCALE - MIN_SCALE) * clamped;
 }
 
-/** Apparent visual magnitude → core brightness multiplier (drives glow center). */
+/** Apparent visual magnitude → white-point brightness (kept below bloom threshold). */
 export function starBrightness(mag: number): number {
-  const b = Math.pow(0.6, Math.max(0, mag) / 1.5);
-  return Math.min(1.5, Math.max(0.1, b));
+  const b = Math.pow(0.7, Math.max(0, mag) / 2);
+  return Math.min(0.75, Math.max(0.4, b));
 }

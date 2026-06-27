@@ -16,9 +16,9 @@ export function starSpriteTexture(): THREE.Texture {
 
   const halo = ctx.createRadialGradient(half, half, 0, half, half, half);
   halo.addColorStop(0, 'rgba(255,255,255,1)');
-  halo.addColorStop(0.12, 'rgba(255,255,255,0.95)');
-  halo.addColorStop(0.28, 'rgba(255,255,255,0.45)');
-  halo.addColorStop(0.55, 'rgba(255,255,255,0.12)');
+  halo.addColorStop(0.16, 'rgba(255,255,255,0.9)');
+  halo.addColorStop(0.32, 'rgba(255,255,255,0.25)');
+  halo.addColorStop(0.55, 'rgba(255,255,255,0.04)');
   halo.addColorStop(1, 'rgba(255,255,255,0)');
   ctx.fillStyle = halo;
   ctx.fillRect(0, 0, size, size);

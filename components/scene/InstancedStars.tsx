@@ -5,7 +5,6 @@ import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
 import { altAzToVec3 } from '@/lib/dome';
-import { bvToRgb } from '@/lib/starColor';
 import { starScale, starBrightness } from '@/lib/starSize';
 import { starSpriteTexture } from '@/lib/starSpriteTexture';
 import type { CelestialObject } from '@/types';
@@ -73,9 +72,8 @@ export function InstancedStars({
     _dummy.updateMatrix();
     mesh.setMatrixAt(i, _dummy.matrix);
 
-    const [r, g, b] = bvToRgb(s.bv);
-    const br = baseBright.current[i] * brightMul;
-    _color.setRGB(r * br, g * br, b * br);
+    const br = Math.min(1, baseBright.current[i] * brightMul);
+    _color.setRGB(br, br, br);
     mesh.setColorAt(i, _color);
   };
 
@@ -113,20 +111,20 @@ export function InstancedStars({
 
     let dirty = false;
 
-    // Selected star pulses.
+    // Selected star: a little larger + a bit brighter (gentle pulse).
     if (selectionId) {
       const idx = visibleStars.findIndex((s) => s.id === selectionId);
       if (idx >= 0) {
-        const pulse = 1 + Math.sin(Date.now() / 200) * 0.15;
-        applyInstance(idx, 2.5 * pulse, 1.4);
+        const pulse = 1 + Math.sin(Date.now() / 320) * 0.06;
+        applyInstance(idx, 1.7 * pulse, 1.5);
         dirty = true;
       }
     }
 
-    // Hovered star enlarges + brightens.
+    // Hovered star: slight expansion + a touch more luminosity.
     const h = hoveredRef.current;
     if (h != null && h >= 0 && h < count && visibleStars[h]?.id !== selectionId) {
-      applyInstance(h, 2.5, 1.5);
+      applyInstance(h, 1.5, 1.35);
       dirty = true;
     }
 
