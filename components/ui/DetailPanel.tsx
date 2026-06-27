@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import type { FocusInfo } from '@/components/scene/SkyPlanetarium';
 import { FACTS } from '@/data/facts';
 import { lookupInfo, type ObjectInfo } from '@/data/objectInfo';
@@ -74,39 +74,37 @@ export function DetailPanel({ info, sidebarOpen }: { info: FocusInfo | null; sid
         </div>
       )}
 
-      <AnimatePresence initial={false} mode="wait">
-        {expanded ? (
-          <motion.div
-            key="expanded"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: reduce ? 0 : 0.3 }}
-            className="mt-3 min-h-0 flex-1 overflow-y-auto px-5 pb-5"
-          >
-            {rich ? (
-              <RichBody rich={rich} reduce={!!reduce} />
-            ) : (
-              shortFact && <p className="font-doto text-[13px] leading-relaxed text-[var(--text-primary)]">{shortFact}</p>
-            )}
-          </motion.div>
-        ) : (
-          <motion.div
-            key="collapsed"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: reduce ? 0 : 0.2 }}
-            className="px-5 pb-4 pt-3"
-          >
-            {shortFact && (
-              <p className="font-doto text-[12px] leading-relaxed text-[var(--text-primary)] line-clamp-2">
-                {shortFact}
-              </p>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <div className="relative flex-1 min-h-0">
+        {/* Expanded View Content */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: expanded ? 1 : 0 }}
+          transition={{ duration: reduce ? 0 : 0.25 }}
+          style={{ pointerEvents: expanded ? 'auto' : 'none' }}
+          className="absolute inset-0 overflow-y-auto px-5 pb-5 pt-3"
+        >
+          {rich ? (
+            <RichBody rich={rich} reduce={!!reduce} />
+          ) : (
+            shortFact && <p className="font-doto text-[13px] leading-relaxed text-[var(--text-primary)]">{shortFact}</p>
+          )}
+        </motion.div>
+
+        {/* Collapsed View Content */}
+        <motion.div
+          initial={{ opacity: 1 }}
+          animate={{ opacity: expanded ? 0 : 1 }}
+          transition={{ duration: reduce ? 0 : 0.2 }}
+          style={{ pointerEvents: expanded ? 'none' : 'auto' }}
+          className="px-5 pb-4 pt-3"
+        >
+          {shortFact && (
+            <p className="font-doto text-[12px] leading-relaxed text-[var(--text-primary)] line-clamp-2">
+              {shortFact}
+            </p>
+          )}
+        </motion.div>
+      </div>
     </motion.div>
   );
 }
