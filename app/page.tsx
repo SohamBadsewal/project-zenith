@@ -59,8 +59,12 @@ export default function Page() {
   const hashWritten = useRef(false);
   const tRef = useRef(0);
   const overlayRef = useRef<HTMLDivElement>(null);
+  const [isMobile, setIsMobile] = useState(false);
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setMounted(true);
+    setIsMobile(window.innerWidth < 768);
+  }, []);
 
   useEffect(() => {
     if (!mounted) return;
@@ -190,7 +194,7 @@ export default function Page() {
   return (
     <main className="relative h-screen w-screen overflow-hidden bg-black">
       {mounted && (
-        <Canvas shadows dpr={[1, 2]} gl={{ powerPreference: 'high-performance', antialias: true }} camera={{ position: [0, 4.5, 22], fov: 45, near: 0.1, far: 1000 }}>
+        <Canvas shadows={!isMobile} dpr={[1, 2]} gl={{ powerPreference: 'high-performance', antialias: !isMobile }} camera={{ position: [0, 4.5, 22], fov: 45, near: 0.1, far: 1000 }}>
           {showHero && <HeroScene />}
 
           {showGlobe && (
@@ -207,12 +211,12 @@ export default function Page() {
             <SkyPlanetarium data={sky} layers={layers} selectionId={selectionId} onSelect={select} onFocus={setFocusInfo} />
           )}
 
-          {showHero && (
+          {showHero && !isMobile && (
             <EffectComposer>
               <Bloom luminanceThreshold={0.55} luminanceSmoothing={0.18} intensity={2.0} radius={0.85} mipmapBlur />
             </EffectComposer>
           )}
-          {showSky && (
+          {showSky && !isMobile && (
             <EffectComposer>
               <Bloom luminanceThreshold={0.8} luminanceSmoothing={0.6} intensity={0.5} radius={0.4} mipmapBlur />
             </EffectComposer>

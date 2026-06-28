@@ -6,8 +6,6 @@ import * as THREE from 'three';
 import { useZenith } from '@/store/useZenith';
 import { smokeVertex, smokeFragment } from './smoke';
 
-const COUNT = 750;
-
 function makeSprite() {
   const s = 64;
   const c = document.createElement('canvas');
@@ -29,11 +27,13 @@ export function SmokeSystem({ position = [0, -0.5, 0] }: { position?: [number, n
   const matRef = useRef<THREE.ShaderMaterial>(null);
   const sprite = useMemo(makeSprite, []);
   const geo = useMemo(() => {
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    const count = isMobile ? 250 : 750;
     const g = new THREE.BufferGeometry();
-    const pos = new Float32Array(COUNT * 3);
-    const seed = new Float32Array(COUNT);
-    const speed = new Float32Array(COUNT);
-    for (let i = 0; i < COUNT; i++) {
+    const pos = new Float32Array(count * 3);
+    const seed = new Float32Array(count);
+    const speed = new Float32Array(count);
+    for (let i = 0; i < count; i++) {
       seed[i] = Math.random();
       speed[i] = Math.random();
     }
