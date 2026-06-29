@@ -66,7 +66,7 @@ export const useZenith = create<ZenithStore>((set, get) => ({
   viewMode: 'static',
   sky: null,
   globeIntro: true,
-  skipAnimation: typeof window !== 'undefined' ? localStorage.getItem('skip_animation') === 'true' : false,
+  skipAnimation: false,
   mode: 'single',
   compareObserver: null,
 

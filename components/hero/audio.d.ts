@@ -8,4 +8,5 @@ export const audio: {
   fadeRoar(seconds?: number): void;
   spaceHum(): void;
   fadeHum(seconds?: number): void;
+  stopLaunch(): void;
 };

@@ -107,7 +107,8 @@ export default function Page() {
 
   useEffect(() => {
     if (phase !== 'warp') return;
-    audio.fadeRoar(1.4);
+    const skip = useZenith.getState().skipAnimation;
+    audio.fadeRoar(skip ? 0.2 : 1.4);
     // Cinematic dark dissolve — the rocket climbs into a deepening sky (no white flash).
     if (overlayRef.current) overlayRef.current.style.opacity = '1';
     const t = setTimeout(() => {
@@ -119,6 +120,7 @@ export default function Page() {
 
   useEffect(() => {
     if (phase !== 'globe') return;
+    audio.stopLaunch();
     // Fade the darkness away as the camera descends out of space toward Earth.
     if (overlayRef.current) overlayRef.current.style.opacity = '0';
     // Fade out the space hum since the rocket transition is complete!

@@ -17,6 +17,15 @@ export function HeroHud() {
   const skipAnimation = useZenith((s) => s.skipAnimation);
   const setSkipAnimation = useZenith((s) => s.setSkipAnimation);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('skip_animation') === 'true';
+      if (saved) {
+        setSkipAnimation(true);
+      }
+    }
+  }, [setSkipAnimation]);
+
   const startY = useRef(0);
   const raf = useRef(0);
 

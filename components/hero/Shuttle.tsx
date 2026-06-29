@@ -68,6 +68,7 @@ function ShuttleModel() {
   const launchedAt = useZenith((s) => s.launchedAt);
   const finishMagnify = useZenith((s) => s.finishMagnify);
   const shuttleRect = useZenith((s) => s.shuttleRect);
+  const phase = useZenith((s) => s.phase);
   const magnifyTl = useRef<gsap.core.Timeline | null>(null);
   const launchTl = useRef<gsap.core.Timeline | null>(null);
   const prev = useRef<string>('idle');
@@ -139,13 +140,17 @@ function ShuttleModel() {
       inner.current.position.z = Math.cos(t * 53) * j * 0.018;
       inner.current.rotation.x = Math.sin(t * 90) * j * 0.008;
       inner.current.rotation.z = Math.sin(t * 64) * j * 0.01;
-      audio.setTension(j);
+      if (phase === 'launch') {
+        audio.setTension(j);
+      }
     } else if (launch === 'launched') {
       const e = (performance.now() - launchedAt) / 1000;
       const decay = Math.max(0, 1 - e / 1.5);
       inner.current.position.x = Math.sin(t * 80) * 0.03 * decay;
       inner.current.rotation.z = 0.04 + Math.sin(t * 30) * 0.02 * decay;
-      audio.setTension(Math.max(0, 1 - e / 5));
+      if (phase === 'launch') {
+        audio.setTension(Math.max(0, 1 - e / 5));
+      }
     } else if (launch === 'armed') {
       inner.current.position.set(0, inner.current.position.y, 0);
       inner.current.rotation.set(0, 0, 0);

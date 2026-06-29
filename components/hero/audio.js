@@ -193,5 +193,21 @@ class AudioEngine {
       }
     }, seconds * 1000 + 100);
   }
+  stopLaunch() {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    if (this.roar && this.roar.started) {
+      try {
+        this.roar.out.gain.cancelScheduledValues(t);
+        this.roar.out.gain.setValueAtTime(0.0001, t);
+      } catch (e) {}
+    }
+    if (this.rumble) {
+      try {
+        this.rumble.out.gain.cancelScheduledValues(t);
+        this.rumble.out.gain.setValueAtTime(0.0001, t);
+      } catch (e) {}
+    }
+  }
 }
 export const audio = new AudioEngine();
