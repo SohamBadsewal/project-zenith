@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import { altAzToVec3, circlePoints } from '@/lib/dome';
 import { raDecToAltAz } from '@/lib/ephemeris';
 import { satId, type SkyData, type IssOrbitPoint } from '@/hooks/useSky';
-import type { CelestialObject, SatelliteState } from '@/types';
+import type { CelestialObject, SatelliteState, ObserverLocation } from '@/types';
 import { InstancedStars } from './InstancedStars';
 import { SatModel } from './SatModel';
 import { PlanetModel } from './PlanetModel';
@@ -65,12 +65,14 @@ export function SkyPlanetarium({
   selectionId,
   onSelect,
   onFocus,
+  observerOverride,
 }: {
   data: SkyData;
   layers: Layers;
   selectionId: string | null;
   onSelect: (id: string | null) => void;
   onFocus: (info: FocusInfo | null) => void;
+  observerOverride?: ObserverLocation | null;
 }) {
   const [focusId, setFocusId] = useState<string | null>(null);
 
@@ -87,7 +89,8 @@ export function SkyPlanetarium({
   const sats = useMemo(() => pickHeroSats(data.satellites), [data.satellites]);
 
   // Observer + effective time — must be declared before any memo that uses them.
-  const observer = useZenith((s) => s.observer);
+  const storeObserver = useZenith((s) => s.observer);
+  const observer = observerOverride !== undefined ? observerOverride : storeObserver;
   const dateMs = effectiveEpochMs(useZenith((s) => s.time));
 
   const objCands = useMemo<Cand[]>(() => {

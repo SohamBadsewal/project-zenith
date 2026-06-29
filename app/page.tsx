@@ -25,6 +25,7 @@ import { GuideCard } from '@/components/ui/GuideCard';
 import { SkyGuideCard } from '@/components/ui/SkyGuideCard';
 import { BackgroundMusic } from '@/components/ui/BackgroundMusic';
 import { SkySearch } from '@/components/ui/SkySearch';
+import { CompareToggle } from '@/components/ui/CompareToggle';
 import { formatLatLon } from '@/lib/geo';
 import { buildShareHash, parseShareHash } from '@/lib/shareUrl';
 
@@ -40,6 +41,8 @@ export default function Page() {
   const phase = useZenith((s) => s.phase);
   const launch = useZenith((s) => s.launch);
   const observer = useZenith((s) => s.observer);
+  const compareObserver = useZenith((s) => s.compareObserver);
+  const mode = useZenith((s) => s.mode);
   const pending = useZenith((s) => s.pending);
   const selectionId = useZenith((s) => s.selectionId);
   const select = useZenith((s) => s.select);
@@ -205,53 +208,88 @@ export default function Page() {
   return (
     <main className="relative h-screen w-screen overflow-hidden bg-black">
       {mounted && (
-        <Canvas shadows={!isMobile} dpr={[1, 2]} gl={{ powerPreference: 'high-performance', antialias: !isMobile }} camera={{ position: [0, 4.5, 22], fov: 45, near: 0.1, far: 1000 }}>
-          {showHero && <HeroScene />}
+        phase === 'sky' && mode === 'compare' ? (
+          <div className="flex h-screen w-screen bg-black divide-x divide-zinc-800 pointer-events-auto">
+            {/* Left Column: Location A */}
+            <div className="relative flex-1 h-full overflow-hidden">
+              <Canvas shadows={!isMobile} dpr={[1, 2]} gl={{ powerPreference: 'high-performance', antialias: !isMobile }} camera={{ position: [0, 0, 0], fov: 45, near: 0.1, far: 1000 }}>
+                <SkyPlanetarium observerOverride={observer} data={sky} layers={layers} selectionId={selectionId} onSelect={select} onFocus={setFocusInfo} />
+                {viewMode === 'static' && <StaticCamera />}
+                {(viewMode === 'freeroam' || viewMode === 'freeview') && (
+                  <OrbitControls makeDefault enablePan={false} enableZoom rotateSpeed={-0.4} minDistance={0.1} maxDistance={2} enableDamping dampingFactor={0.12} />
+                )}
+              </Canvas>
+              {viewMode !== 'freeview' && observer && (
+                <div className="absolute left-4 top-16 z-30 pointer-events-none bg-black/60 border border-white/10 px-4 py-2 font-doto text-[11px] uppercase tracking-[0.16em] text-white" style={{ borderRadius: 6 }}>
+                  LOCATION A: {observer.placeName ?? formatLatLon(observer.latDeg, observer.lonDeg)}
+                </div>
+              )}
+            </div>
+            {/* Right Column: Location B */}
+            <div className="relative flex-1 h-full overflow-hidden">
+              <Canvas shadows={!isMobile} dpr={[1, 2]} gl={{ powerPreference: 'high-performance', antialias: !isMobile }} camera={{ position: [0, 0, 0], fov: 45, near: 0.1, far: 1000 }}>
+                <SkyPlanetarium observerOverride={compareObserver} data={sky} layers={layers} selectionId={selectionId} onSelect={select} onFocus={setFocusInfo} />
+                {viewMode === 'static' && <StaticCamera />}
+                {(viewMode === 'freeroam' || viewMode === 'freeview') && (
+                  <OrbitControls makeDefault enablePan={false} enableZoom rotateSpeed={-0.4} minDistance={0.1} maxDistance={2} enableDamping dampingFactor={0.12} />
+                )}
+              </Canvas>
+              {viewMode !== 'freeview' && compareObserver && (
+                <div className="absolute left-4 top-16 z-30 pointer-events-none bg-black/60 border border-white/10 px-4 py-2 font-doto text-[11px] uppercase tracking-[0.16em] text-white" style={{ borderRadius: 6 }}>
+                  LOCATION B: {compareObserver.placeName ?? formatLatLon(compareObserver.latDeg, compareObserver.lonDeg)}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <Canvas shadows={!isMobile} dpr={[1, 2]} gl={{ powerPreference: 'high-performance', antialias: !isMobile }} camera={{ position: [0, 4.5, 22], fov: 45, near: 0.1, far: 1000 }}>
+            {showHero && <HeroScene />}
 
-          {showGlobe && (
-            <>
-              <ambientLight intensity={0.6} />
-              <directionalLight position={[5, 3, 5]} intensity={2.2} />
-              <directionalLight position={[-5, -3, -5]} intensity={0.4} />
-              <Starfield />
-              <Globe />
-            </>
-          )}
+            {showGlobe && (
+              <>
+                <ambientLight intensity={0.6} />
+                <directionalLight position={[5, 3, 5]} intensity={2.2} />
+                <directionalLight position={[-5, -3, -5]} intensity={0.4} />
+                <Starfield />
+                <Globe />
+              </>
+            )}
 
-          {showSky && (
-            <SkyPlanetarium data={sky} layers={layers} selectionId={selectionId} onSelect={select} onFocus={setFocusInfo} />
-          )}
+            {showSky && (
+              <SkyPlanetarium data={sky} layers={layers} selectionId={selectionId} onSelect={select} onFocus={setFocusInfo} />
+            )}
 
-          {showHero && !isMobile && (
-            <EffectComposer>
-              <Bloom luminanceThreshold={0.55} luminanceSmoothing={0.18} intensity={2.0} radius={0.85} mipmapBlur />
-            </EffectComposer>
-          )}
-          {showSky && !isMobile && (
-            <EffectComposer>
-              <Bloom luminanceThreshold={0.8} luminanceSmoothing={0.6} intensity={0.5} radius={0.4} mipmapBlur />
-            </EffectComposer>
-          )}
+            {showHero && !isMobile && (
+              <EffectComposer>
+                <Bloom luminanceThreshold={0.55} luminanceSmoothing={0.18} intensity={2.0} radius={0.85} mipmapBlur />
+              </EffectComposer>
+            )}
+            {showSky && !isMobile && (
+              <EffectComposer>
+                <Bloom luminanceThreshold={0.8} luminanceSmoothing={0.6} intensity={0.5} radius={0.4} mipmapBlur />
+              </EffectComposer>
+            )}
 
-          <TransitionRig phase={phase} tRef={tRef} />
+            <TransitionRig phase={phase} tRef={tRef} />
 
-          {phase === 'globe' && !globeIntro && (
-            <OrbitControls makeDefault enablePan={false} minDistance={1.4} maxDistance={5} enableDamping />
-          )}
-          {phase === 'sky' && viewMode === 'static' && <StaticCamera />}
-          {phase === 'sky' && (viewMode === 'freeroam' || viewMode === 'freeview') && (
-            <OrbitControls
-              makeDefault
-              enablePan={false}
-              enableZoom
-              rotateSpeed={-0.4}
-              minDistance={0.1}
-              maxDistance={2}
-              enableDamping
-              dampingFactor={0.12}
-            />
-          )}
-        </Canvas>
+            {phase === 'globe' && !globeIntro && (
+              <OrbitControls makeDefault enablePan={false} minDistance={1.4} maxDistance={5} enableDamping />
+            )}
+            {phase === 'sky' && viewMode === 'static' && <StaticCamera />}
+            {phase === 'sky' && (viewMode === 'freeroam' || viewMode === 'freeview') && (
+              <OrbitControls
+                makeDefault
+                enablePan={false}
+                enableZoom
+                rotateSpeed={-0.4}
+                minDistance={0.1}
+                maxDistance={2}
+                enableDamping
+                dampingFactor={0.12}
+              />
+            )}
+          </Canvas>
+        )
       )}
 
       <div ref={overlayRef} className="pointer-events-none absolute inset-0 z-40 bg-black opacity-0 transition-opacity duration-1000 ease-in-out" />
@@ -261,6 +299,7 @@ export default function Page() {
       {phase === 'globe' && (
         <>
           <Hud />
+          <CompareToggle />
           <SearchBar />
           <LocationCard />
           {!pending && <GuideCard />}
@@ -283,7 +322,7 @@ export default function Page() {
               
               <SkySearch data={sky} layers={layers} setLayers={setLayers} onSelect={select} />
 
-              {observer && (
+              {mode === 'single' && observer && (
                 <div className="absolute left-16 top-4 z-40 font-mono text-[12px] text-[var(--text-secondary)] sm:left-20 sm:top-7">
                   ◐ {observer.placeName ?? formatLatLon(observer.latDeg, observer.lonDeg)}
                 </div>

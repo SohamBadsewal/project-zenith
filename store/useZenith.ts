@@ -24,6 +24,9 @@ export interface ZenithStore {
   globeIntro: boolean;
   skipAnimation: boolean;
   setSkipAnimation: (s: boolean) => void;
+  mode: 'single' | 'compare';
+  compareObserver: ObserverLocation | null;
+  setMode: (m: 'single' | 'compare') => void;
 
   setPhase: (p: Phase) => void;
   beginLaunch: (rect: DOMRect) => void;
@@ -36,7 +39,7 @@ export interface ZenithStore {
   enterGlobe: () => void;
   finishGlobeIntro: () => void;
   pickLocation: (loc: ObserverLocation) => void;
-  confirmLocation: () => void;
+  confirmLocation: (resolvedPlaceName?: string) => void;
   clearPending: () => void;
   setScrubOffset: (ms: number) => void;
   select: (id: string | null) => void;
@@ -61,6 +64,8 @@ export const useZenith = create<ZenithStore>((set, get) => ({
   sky: null,
   globeIntro: true,
   skipAnimation: typeof window !== 'undefined' ? localStorage.getItem('skip_animation') === 'true' : false,
+  mode: 'single',
+  compareObserver: null,
 
   setSkipAnimation: (skipAnimation) => {
     if (typeof window !== 'undefined') {
@@ -68,6 +73,7 @@ export const useZenith = create<ZenithStore>((set, get) => ({
     }
     set({ skipAnimation });
   },
+  setMode: (mode) => set({ mode, observer: null, compareObserver: null, pending: null }),
   setPhase: (phase) => set({ phase }),
   beginLaunch: (rect) => get().launch === 'idle' && set({ launch: 'magnifying', shuttleRect: rect }),
   finishMagnify: () => get().launch === 'magnifying' && set({ launch: 'armed', shuttleRect: null }),
@@ -87,9 +93,21 @@ export const useZenith = create<ZenithStore>((set, get) => ({
   enterGlobe: () => set({ phase: 'globe', globeIntro: true }),
   finishGlobeIntro: () => set({ globeIntro: false }),
   pickLocation: (pending) => set({ pending }),
-  confirmLocation: () =>
-    set((s) => (s.pending ? { observer: s.pending, pending: null, phase: 'descent' } : {})),
-  clearPending: () => set({ pending: null }),
+  confirmLocation: (resolvedPlaceName) =>
+    set((s) => {
+      if (!s.pending) return {};
+      const finalLoc = { ...s.pending, placeName: resolvedPlaceName ?? s.pending.placeName };
+      if (s.mode === 'single') {
+        return { observer: finalLoc, pending: null, phase: 'descent' };
+      } else {
+        if (!s.observer) {
+          return { observer: finalLoc, pending: null };
+        } else {
+          return { compareObserver: finalLoc, pending: null, phase: 'descent' };
+        }
+      }
+    }),
+  clearPending: () => set({ observer: null, compareObserver: null, pending: null }),
   setScrubOffset: (ms) => set((s) => ({ time: { ...s.time, scrubOffsetMs: clampScrub(ms) } })),
   select: (selectionId) => set({ selectionId }),
   setViewMode: (viewMode) => set({ viewMode }),
@@ -104,11 +122,13 @@ export const useZenith = create<ZenithStore>((set, get) => ({
       launchedAt: 0,
       status: 'idle',
       observer: null,
+      compareObserver: null,
       pending: null,
       selectionId: null,
       viewMode: 'static',
       sky: null,
       globeIntro: true,
       time: nowSimTime(),
+      mode: 'single',
     }),
 }));

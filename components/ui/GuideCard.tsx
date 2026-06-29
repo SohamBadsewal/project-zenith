@@ -10,19 +10,19 @@ export function GuideCard() {
         <li className="flex gap-3">
           <span className="text-[var(--interactive)] font-bold">01.</span>
           <div>
-            <strong className="text-white">Rotate Earth:</strong> Drag the globe around to explore different regions.
+            <strong className="text-white">Choose Mode:</strong> Toggle between <span className="text-[var(--interactive)]">SINGLE POINT</span> and <span className="text-[var(--interactive)]">COMPARE</span> mode on the top left.
           </div>
         </li>
         <li className="flex gap-3">
           <span className="text-[var(--interactive)] font-bold">02.</span>
           <div>
-            <strong className="text-white">Select Location:</strong> Click directly on any place on Earth, search a city above, or tap <span className="text-[var(--interactive)]">◎ Use My Location</span>.
+            <strong className="text-white">Select Location(s):</strong> Click on the globe, search a city, or click <span className="text-[var(--interactive)]">◎ Use My Location</span>. In Compare Mode, you will select and confirm Location A first, then Location B.
           </div>
         </li>
         <li className="flex gap-3">
           <span className="text-[var(--interactive)] font-bold">03.</span>
           <div>
-            <strong className="text-white">Launch to Sky:</strong> Confirm your choice to read the stars passing through its zenith right now.
+            <strong className="text-white">Launch to Sky:</strong> Once confirmed, experience a real-time side-by-side split screen view of both zeniths (Compare Mode) or a full view (Single Mode).
           </div>
         </li>
       </ol>

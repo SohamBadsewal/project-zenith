@@ -33,6 +33,7 @@ export function Globe() {
 
   const pending = useZenith((s) => s.pending);
   const observer = useZenith((s) => s.observer);
+  const compareObserver = useZenith((s) => s.compareObserver);
   const pick = useZenith((s) => s.pickLocation);
 
   const dayMap = useTexture('/textures/earth_day.jpg', (t) => {
@@ -91,13 +92,23 @@ export function Globe() {
     pick({ latDeg, lonDeg, elevationM: 0, source: 'globe' });
   };
 
-  // Pin reflects the confirmed observer, else the pending pick.
-  const marked = observer ?? pending;
-  const pinPos = useMemo(() => {
-    if (!marked) return null;
-    const v = latLonToUnitVector(marked.latDeg, marked.lonDeg);
+  const pinA = useMemo(() => {
+    if (!observer) return null;
+    const v = latLonToUnitVector(observer.latDeg, observer.lonDeg);
     return new THREE.Vector3(v.x, v.y, v.z);
-  }, [marked]);
+  }, [observer]);
+
+  const pinB = useMemo(() => {
+    if (!compareObserver) return null;
+    const v = latLonToUnitVector(compareObserver.latDeg, compareObserver.lonDeg);
+    return new THREE.Vector3(v.x, v.y, v.z);
+  }, [compareObserver]);
+
+  const pinPending = useMemo(() => {
+    if (!pending) return null;
+    const v = latLonToUnitVector(pending.latDeg, pending.lonDeg);
+    return new THREE.Vector3(v.x, v.y, v.z);
+  }, [pending]);
 
   return (
     <group ref={groupRef}>
@@ -117,25 +128,31 @@ export function Globe() {
         <sphereGeometry args={[GLOBE_RADIUS, 64, 64]} />
       </mesh>
 
-      {pinPos && (
-        <group position={pinPos.clone().multiplyScalar(1.001)}>
-          <mesh position={pinPos.clone().multiplyScalar(0.03)}>
-            <sphereGeometry args={[0.02, 16, 16]} />
-            <meshBasicMaterial color="#d71921" />
-          </mesh>
-          {/* thin stalk */}
-          <mesh
-            position={pinPos.clone().multiplyScalar(0.015)}
-            quaternion={new THREE.Quaternion().setFromUnitVectors(
-              new THREE.Vector3(0, 1, 0),
-              pinPos.clone().normalize(),
-            )}
-          >
-            <cylinderGeometry args={[0.002, 0.002, 0.06, 6]} />
-            <meshBasicMaterial color="#d71921" />
-          </mesh>
-        </group>
-      )}
+      {pinA && <Pin pos={pinA} color="#4a9eff" />}
+      {pinB && <Pin pos={pinB} color="#10b981" />}
+      {pinPending && <Pin pos={pinPending} color="#d71921" />}
+    </group>
+  );
+}
+
+function Pin({ pos, color }: { pos: THREE.Vector3; color: string }) {
+  return (
+    <group position={pos.clone().multiplyScalar(1.001)}>
+      <mesh position={pos.clone().multiplyScalar(0.03)}>
+        <sphereGeometry args={[0.025, 16, 16]} />
+        <meshBasicMaterial color={color} />
+      </mesh>
+      {/* thin stalk */}
+      <mesh
+        position={pos.clone().multiplyScalar(0.015)}
+        quaternion={new THREE.Quaternion().setFromUnitVectors(
+          new THREE.Vector3(0, 1, 0),
+          pos.clone().normalize(),
+        )}
+      >
+        <cylinderGeometry args={[0.002, 0.002, 0.06, 6]} />
+        <meshBasicMaterial color={color} />
+      </mesh>
     </group>
   );
 }
