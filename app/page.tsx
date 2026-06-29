@@ -45,7 +45,9 @@ export default function Page() {
   const mode = useZenith((s) => s.mode);
   const pending = useZenith((s) => s.pending);
   const selectionId = useZenith((s) => s.selectionId);
+  const compareSelectionId = useZenith((s) => s.compareSelectionId);
   const select = useZenith((s) => s.select);
+  const selectCompare = useZenith((s) => s.selectCompare);
   const setPhase = useZenith((s) => s.setPhase);
   const viewMode = useZenith((s) => s.viewMode);
   const time = useZenith((s) => s.time);
@@ -228,7 +230,7 @@ export default function Page() {
             {/* Right Column: Location B */}
             <div className="relative flex-1 h-full overflow-hidden">
               <Canvas shadows={!isMobile} dpr={[1, 2]} gl={{ powerPreference: 'high-performance', antialias: !isMobile }} camera={{ position: [0, 0, 0], fov: 45, near: 0.1, far: 1000 }}>
-                <SkyPlanetarium observerOverride={compareObserver} data={sky} layers={layers} selectionId={selectionId} onSelect={select} onFocus={setFocusInfo} />
+                <SkyPlanetarium observerOverride={compareObserver} data={sky} layers={layers} selectionId={compareSelectionId} onSelect={selectCompare} onFocus={setFocusInfo} />
                 {viewMode === 'static' && <StaticCamera />}
                 {(viewMode === 'freeroam' || viewMode === 'freeview') && (
                   <OrbitControls makeDefault enablePan={false} enableZoom rotateSpeed={-0.4} minDistance={0.1} maxDistance={2} enableDamping dampingFactor={0.12} />
