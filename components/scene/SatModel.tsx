@@ -42,11 +42,13 @@ export function SatModel({
   glbUrl,
   selected = false,
   onClick,
+  onDoubleClick,
 }: {
   iss: boolean;
   glbUrl?: string;
   selected?: boolean;
   onClick: (e: ThreeEvent<MouseEvent>) => void;
+  onDoubleClick?: (e: ThreeEvent<MouseEvent>) => void;
 }) {
   const ref = useRef<THREE.Group>(null);
   // The GLB is normalised to ~2 units; these factors keep the whole craft a
@@ -61,7 +63,7 @@ export function SatModel({
   });
   const proc = iss ? <IssBody /> : <GenericSat />;
   return (
-    <group ref={ref} scale={base} onClick={onClick}>
+    <group ref={ref} scale={base} onClick={onClick} onDoubleClick={onDoubleClick}>
       {glbUrl ? (
         <GltfBoundary fallback={proc}>
           <Suspense fallback={proc}>

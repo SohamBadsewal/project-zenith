@@ -20,6 +20,8 @@ export interface ZenithStore {
   time: SimTime;
   selectionId: string | null;
   compareSelectionId: string | null;
+  zoomTargetId: string | null;
+  compareZoomTargetId: string | null;
   viewMode: ViewMode;
   sky: SkyState | null;
   globeIntro: boolean;
@@ -45,6 +47,8 @@ export interface ZenithStore {
   setScrubOffset: (ms: number) => void;
   select: (id: string | null) => void;
   selectCompare: (id: string | null) => void;
+  zoomTo: (id: string | null) => void;
+  zoomCompare: (id: string | null) => void;
   setViewMode: (m: ViewMode) => void;
   setSky: (s: SkyState) => void;
   setStatus: (s: Status) => void;
@@ -63,6 +67,8 @@ export const useZenith = create<ZenithStore>((set, get) => ({
   time: nowSimTime(),
   selectionId: null,
   compareSelectionId: null,
+  zoomTargetId: null,
+  compareZoomTargetId: null,
   viewMode: 'static',
   sky: null,
   globeIntro: true,
@@ -76,7 +82,7 @@ export const useZenith = create<ZenithStore>((set, get) => ({
     }
     set({ skipAnimation });
   },
-  setMode: (mode) => set({ mode, observer: null, compareObserver: null, pending: null, selectionId: null, compareSelectionId: null }),
+  setMode: (mode) => set({ mode, observer: null, compareObserver: null, pending: null, selectionId: null, compareSelectionId: null, zoomTargetId: null, compareZoomTargetId: null }),
   setPhase: (phase) => set({ phase }),
   beginLaunch: (rect) => get().launch === 'idle' && set({ launch: 'magnifying', shuttleRect: rect }),
   finishMagnify: () => get().launch === 'magnifying' && set({ launch: 'armed', shuttleRect: null }),
@@ -114,6 +120,8 @@ export const useZenith = create<ZenithStore>((set, get) => ({
   setScrubOffset: (ms) => set((s) => ({ time: { ...s.time, scrubOffsetMs: clampScrub(ms) } })),
   select: (selectionId) => set({ selectionId }),
   selectCompare: (compareSelectionId) => set({ compareSelectionId }),
+  zoomTo: (zoomTargetId) => set({ zoomTargetId }),
+  zoomCompare: (compareZoomTargetId) => set({ compareZoomTargetId }),
   setViewMode: (viewMode) => set({ viewMode }),
   setSky: (sky) => set({ sky }),
   setStatus: (status) => set({ status }),
@@ -130,6 +138,8 @@ export const useZenith = create<ZenithStore>((set, get) => ({
       pending: null,
       selectionId: null,
       compareSelectionId: null,
+      zoomTargetId: null,
+      compareZoomTargetId: null,
       viewMode: 'static',
       sky: null,
       globeIntro: true,

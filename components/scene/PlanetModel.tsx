@@ -137,11 +137,13 @@ export function PlanetModel({
   focused,
   selected,
   onClick,
+  onDoubleClick,
 }: {
   body: CelestialObject;
   focused: boolean;
   selected: boolean;
   onClick: (e: ThreeEvent<MouseEvent>) => void;
+  onDoubleClick?: (e: ThreeEvent<MouseEvent>) => void;
 }) {
   const ref = useRef<THREE.Group>(null);
   const radius = RADIUS[body.kind === 'sun' ? 'sun' : body.kind === 'moon' ? 'moon' : body.id] ?? 0.12;
@@ -159,7 +161,7 @@ export function PlanetModel({
   });
 
   return (
-    <group ref={ref} onClick={onClick}>
+    <group ref={ref} onClick={onClick} onDoubleClick={onDoubleClick}>
       {isSun ? (
         <AssetBoundary fallback={fallback}>
           <SunSphere radius={radius} />

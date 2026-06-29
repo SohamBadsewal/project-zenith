@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { Billboard, Line } from '@react-three/drei';
 import * as THREE from 'three';
+import gsap from 'gsap';
 import { altAzToVec3, circlePoints } from '@/lib/dome';
 import { raDecToAltAz } from '@/lib/ephemeris';
 import { satId, type SkyData, type IssOrbitPoint } from '@/hooks/useSky';
@@ -66,6 +67,8 @@ export function SkyPlanetarium({
   onSelect,
   onFocus,
   observerOverride,
+  zoomTargetId = null,
+  onZoom = () => {},
 }: {
   data: SkyData;
   layers: Layers;
@@ -73,6 +76,8 @@ export function SkyPlanetarium({
   onSelect: (id: string | null) => void;
   onFocus: (info: FocusInfo | null) => void;
   observerOverride?: ObserverLocation | null;
+  zoomTargetId?: string | null;
+  onZoom?: (id: string | null) => void;
 }) {
   const [focusId, setFocusId] = useState<string | null>(null);
 
@@ -165,7 +170,14 @@ export function SkyPlanetarium({
       <SunLight bodies={data.bodies} />
 
       <FocusScan objCands={objCands} conCands={conCands} layers={layers} setFocusId={setFocusId} onFocus={onFocus} />
-      <CameraTracker selectionId={selectionId} onSelect={onSelect} data={data} dateMs={dateMs} />
+      <CameraTracker
+        selectionId={selectionId}
+        onSelect={onSelect}
+        zoomTargetId={zoomTargetId}
+        onZoom={onZoom}
+        data={data}
+        dateMs={dateMs}
+      />
 
       <InstancedStars stars={data.stars} visible={layers.stars} selectionId={starSelection} onSelect={onSelect} />
 
@@ -190,6 +202,10 @@ export function SkyPlanetarium({
               focused={focusId === b.id}
               selected={selectionId === b.id}
               onClick={(e) => { e.stopPropagation(); onSelect(selectionId === b.id ? null : b.id); }}
+              onDoubleClick={(e) => {
+                e.stopPropagation();
+                onZoom(zoomTargetId === b.id ? null : b.id);
+              }}
             />
           </group>
         ))}
@@ -209,6 +225,10 @@ export function SkyPlanetarium({
                 glbUrl={glbUrl}
                 selected={selected}
                 onClick={(e) => { e.stopPropagation(); onSelect(selected ? null : id); }}
+                onDoubleClick={(e) => {
+                  e.stopPropagation();
+                  onZoom(zoomTargetId === id ? null : id);
+                }}
               />
             </group>
           );
@@ -338,11 +358,15 @@ function IssOrbitTrack({ points }: { points: IssOrbitPoint[] }) {
 function CameraTracker({
   selectionId,
   onSelect,
+  zoomTargetId,
+  onZoom,
   data,
   dateMs,
 }: {
   selectionId: string | null;
   onSelect: (id: string | null) => void;
+  zoomTargetId: string | null;
+  onZoom: (id: string | null) => void;
   data: SkyData;
   dateMs: number;
 }) {
@@ -447,6 +471,7 @@ function CameraTracker({
       // 22px is a perfect drag threshold - not too sensitive, not too stubborn
       if (dist > 22) {
         triggered = true;
+        onZoom(null);
         onSelect(null);
       }
     };
@@ -467,11 +492,110 @@ function CameraTracker({
     };
   }, [selectionId, gl, onSelect]);
 
-  // Smoothly lerp camera position to point at targetVec
+  // Smooth transition between wide-sky view and planet/satellite close-up using GSAP
+  useEffect(() => {
+    if (!controls) return;
+
+    // Kill any active tweens on camera / controls target
+    gsap.killTweensOf(camera.position);
+    // @ts-ignore
+    gsap.killTweensOf(controls.target);
+
+    const isZoomed = zoomTargetId && (zoomTargetId === selectionId);
+    if (isZoomed && targetVec.current) {
+      const targetObjPos = targetVec.current.clone().multiplyScalar(DOME_R);
+      
+      let offsetDist = 0.5;
+      if (selectionId === 'sun') offsetDist = 0.8;
+      else if (selectionId === 'moon') offsetDist = 0.6;
+      else if (selectionId?.startsWith('sat:')) offsetDist = 0.35;
+
+      const targetCamPos = targetVec.current.clone().multiplyScalar(DOME_R - offsetDist);
+
+      // Lock controls during transition to prevent frame stutter
+      // @ts-ignore
+      controls.enabled = false;
+
+      gsap.to(camera.position, {
+        x: targetCamPos.x,
+        y: targetCamPos.y,
+        z: targetCamPos.z,
+        duration: 1.2,
+        ease: 'power3.out',
+      });
+
+      // @ts-ignore
+      gsap.to(controls.target, {
+        x: targetObjPos.x,
+        y: targetObjPos.y,
+        z: targetObjPos.z,
+        duration: 1.2,
+        ease: 'power3.out',
+        onUpdate: () => {
+          // @ts-ignore
+          controls.update();
+        },
+        onComplete: () => {
+          // Unlock controls with new close-up bounds
+          // @ts-ignore
+          controls.enabled = true;
+          // @ts-ignore
+          controls.minDistance = offsetDist * 0.4;
+          // @ts-ignore
+          controls.maxDistance = offsetDist * 2.5;
+          // @ts-ignore
+          controls.update();
+        }
+      });
+    } else {
+      // Zooming out to freeroam / wide sky view
+      // @ts-ignore
+      controls.enabled = false;
+
+      // @ts-ignore
+      const currentTarget = controls.target.clone();
+      // Camera backed up slightly from center looking outward
+      const targetCamPos = currentTarget.clone().normalize().multiplyScalar(-0.01);
+
+      gsap.to(camera.position, {
+        x: targetCamPos.x,
+        y: targetCamPos.y,
+        z: targetCamPos.z,
+        duration: 1.2,
+        ease: 'power3.out',
+      });
+
+      // @ts-ignore
+      gsap.to(controls.target, {
+        x: 0,
+        y: 0,
+        z: 0,
+        duration: 1.2,
+        ease: 'power3.out',
+        onUpdate: () => {
+          // @ts-ignore
+          controls.update();
+        },
+        onComplete: () => {
+          // Unlock controls with normal freeroam bounds
+          // @ts-ignore
+          controls.enabled = true;
+          // @ts-ignore
+          controls.minDistance = 0.1;
+          // @ts-ignore
+          controls.maxDistance = 2;
+          // @ts-ignore
+          controls.update();
+        }
+      });
+    }
+  }, [zoomTargetId, selectionId, controls, camera]);
+
+  // Smoothly lerp camera position to point at targetVec when NOT zoomed in close-up
   useFrame(() => {
+    if (zoomTargetId) return; // Skip frame-by-frame lerp when zoomed in close-up
     if (!targetVec.current) return;
     const r = camera.position.length();
-    // target camera position is -V * r
     const targetCamPos = targetVec.current.clone().multiplyScalar(-r);
     camera.position.lerp(targetCamPos, 0.08);
     camera.lookAt(0, 0, 0);

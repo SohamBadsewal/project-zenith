@@ -46,8 +46,12 @@ export default function Page() {
   const pending = useZenith((s) => s.pending);
   const selectionId = useZenith((s) => s.selectionId);
   const compareSelectionId = useZenith((s) => s.compareSelectionId);
+  const zoomTargetId = useZenith((s) => s.zoomTargetId);
+  const compareZoomTargetId = useZenith((s) => s.compareZoomTargetId);
   const select = useZenith((s) => s.select);
   const selectCompare = useZenith((s) => s.selectCompare);
+  const zoomTo = useZenith((s) => s.zoomTo);
+  const zoomCompare = useZenith((s) => s.zoomCompare);
   const setPhase = useZenith((s) => s.setPhase);
   const viewMode = useZenith((s) => s.viewMode);
   const time = useZenith((s) => s.time);
@@ -223,7 +227,16 @@ export default function Page() {
             {/* Left Column: Location A */}
             <div className="relative flex-1 h-full overflow-hidden">
               <Canvas shadows={!isMobile} dpr={[1, 2]} gl={{ powerPreference: 'high-performance', antialias: !isMobile }} camera={{ position: [0, 0, 0], fov: 45, near: 0.1, far: 1000 }}>
-                <SkyPlanetarium observerOverride={observer} data={sky} layers={layers} selectionId={selectionId} onSelect={select} onFocus={setFocusInfo} />
+                <SkyPlanetarium
+                  observerOverride={observer}
+                  data={sky}
+                  layers={layers}
+                  selectionId={selectionId}
+                  onSelect={select}
+                  onFocus={setFocusInfo}
+                  zoomTargetId={zoomTargetId}
+                  onZoom={zoomTo}
+                />
                 {viewMode === 'static' && <StaticCamera />}
                 {(viewMode === 'freeroam' || viewMode === 'freeview') && (
                   <OrbitControls makeDefault enablePan={false} enableZoom rotateSpeed={-0.4} minDistance={0.1} maxDistance={2} enableDamping dampingFactor={0.12} />
@@ -239,7 +252,16 @@ export default function Page() {
             {/* Right Column: Location B */}
             <div className="relative flex-1 h-full overflow-hidden">
               <Canvas shadows={!isMobile} dpr={[1, 2]} gl={{ powerPreference: 'high-performance', antialias: !isMobile }} camera={{ position: [0, 0, 0], fov: 45, near: 0.1, far: 1000 }}>
-                <SkyPlanetarium observerOverride={compareObserver} data={sky} layers={layers} selectionId={compareSelectionId} onSelect={selectCompare} onFocus={setCompareFocusInfo} />
+                <SkyPlanetarium
+                  observerOverride={compareObserver}
+                  data={sky}
+                  layers={layers}
+                  selectionId={compareSelectionId}
+                  onSelect={selectCompare}
+                  onFocus={setCompareFocusInfo}
+                  zoomTargetId={compareZoomTargetId}
+                  onZoom={zoomCompare}
+                />
                 {viewMode === 'static' && <StaticCamera />}
                 {(viewMode === 'freeroam' || viewMode === 'freeview') && (
                   <OrbitControls makeDefault enablePan={false} enableZoom rotateSpeed={-0.4} minDistance={0.1} maxDistance={2} enableDamping dampingFactor={0.12} />
@@ -268,7 +290,15 @@ export default function Page() {
             )}
 
             {showSky && (
-              <SkyPlanetarium data={sky} layers={layers} selectionId={selectionId} onSelect={select} onFocus={setFocusInfo} />
+                <SkyPlanetarium
+                  data={sky}
+                  layers={layers}
+                  selectionId={selectionId}
+                  onSelect={select}
+                  onFocus={setFocusInfo}
+                  zoomTargetId={zoomTargetId}
+                  onZoom={zoomTo}
+                />
             )}
 
             {showHero && !isMobile && (
