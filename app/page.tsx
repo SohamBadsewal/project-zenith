@@ -57,6 +57,7 @@ export default function Page() {
   const [mounted, setMounted] = useState(false);
   const [layers, setLayers] = useState<Layers>(DEFAULT_LAYERS);
   const [focusInfo, setFocusInfo] = useState<FocusInfo | null>(null);
+  const [compareFocusInfo, setCompareFocusInfo] = useState<FocusInfo | null>(null);
   const [copied, setCopied] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [skyReady, setSkyReady] = useState(false);
@@ -86,6 +87,11 @@ export default function Page() {
       time: { liveEpochMs: params.epochMs, scrubOffsetMs: 0 },
     });
   }, [mounted]);
+
+  useEffect(() => {
+    setFocusInfo(null);
+    setCompareFocusInfo(null);
+  }, [mode]);
 
   useEffect(() => {
     if (launch === 'magnifying' && useZenith.getState().skipAnimation) {
@@ -228,11 +234,12 @@ export default function Page() {
                   LOCATION A: {observer.placeName ?? formatLatLon(observer.latDeg, observer.lonDeg)}
                 </div>
               )}
+              <DetailPanel key={focusInfo?.id ?? 'left-none'} info={focusInfo} sidebarOpen={false} isSplit={true} />
             </div>
             {/* Right Column: Location B */}
             <div className="relative flex-1 h-full overflow-hidden">
               <Canvas shadows={!isMobile} dpr={[1, 2]} gl={{ powerPreference: 'high-performance', antialias: !isMobile }} camera={{ position: [0, 0, 0], fov: 45, near: 0.1, far: 1000 }}>
-                <SkyPlanetarium observerOverride={compareObserver} data={sky} layers={layers} selectionId={compareSelectionId} onSelect={selectCompare} onFocus={setFocusInfo} />
+                <SkyPlanetarium observerOverride={compareObserver} data={sky} layers={layers} selectionId={compareSelectionId} onSelect={selectCompare} onFocus={setCompareFocusInfo} />
                 {viewMode === 'static' && <StaticCamera />}
                 {(viewMode === 'freeroam' || viewMode === 'freeview') && (
                   <OrbitControls makeDefault enablePan={false} enableZoom rotateSpeed={-0.4} minDistance={0.1} maxDistance={2} enableDamping dampingFactor={0.12} />
@@ -243,6 +250,7 @@ export default function Page() {
                   LOCATION B: {compareObserver.placeName ?? formatLatLon(compareObserver.latDeg, compareObserver.lonDeg)}
                 </div>
               )}
+              <DetailPanel key={compareFocusInfo?.id ?? 'right-none'} info={compareFocusInfo} sidebarOpen={false} isSplit={true} />
             </div>
           </div>
         ) : (
@@ -350,7 +358,9 @@ export default function Page() {
             </>
           )}
 
-          <DetailPanel key={focusInfo?.id ?? 'none'} info={focusInfo} sidebarOpen={sidebarOpen} />
+          {mode !== 'compare' && (
+            <DetailPanel key={focusInfo?.id ?? 'none'} info={focusInfo} sidebarOpen={sidebarOpen} />
+          )}
           <ViewModeToggle />
 
           {(!skyReady || status === 'loading' || status === 'idle') && (

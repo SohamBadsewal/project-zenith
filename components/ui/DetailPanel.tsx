@@ -11,7 +11,7 @@ import { lookupInfo, type ObjectInfo } from '@/data/objectInfo';
  * a tall half-page panel with a hero image, stat grid, description and facts.
  * The small → large transition is a framer-motion layout animation.
  */
-export function DetailPanel({ info, sidebarOpen }: { info: FocusInfo | null; sidebarOpen?: boolean }) {
+export function DetailPanel({ info, sidebarOpen, isSplit }: { info: FocusInfo | null; sidebarOpen?: boolean; isSplit?: boolean }) {
   // `expanded` resets per object because the parent keys this component by id.
   const [expanded, setExpanded] = useState(false);
   const reduce = useReducedMotion();
@@ -27,17 +27,19 @@ export function DetailPanel({ info, sidebarOpen }: { info: FocusInfo | null; sid
   // Check if this object only has the generic fallback dossier
   const isGeneric = !info.id || !rich || rich.summary.includes('A point of light');
 
+  const leftClass = isSplit
+    ? 'left-4'
+    : sidebarOpen ? 'left-6 sm:left-[344px]' : 'left-6 sm:left-8';
+
+  const widthClass = isSplit
+    ? (expanded ? 'bottom-8 top-16 w-[calc(100%-2rem)] max-w-[480px]' : 'bottom-10 h-auto w-[calc(100%-2rem)] max-w-[360px]')
+    : (expanded ? 'bottom-8 top-16 w-[min(560px,94vw)]' : 'bottom-10 h-auto w-[min(90vw,440px)]');
+
   return (
     <motion.div
       layout
       transition={spring}
-      className={`pointer-events-auto absolute z-30 flex flex-col overflow-hidden border border-white/10 bg-black/20 backdrop-blur-md transition-[left] duration-300 ${
-        sidebarOpen ? 'left-6 sm:left-[344px]' : 'left-6 sm:left-8'
-      } ${
-        expanded
-          ? 'bottom-8 top-16 w-[min(560px,94vw)]'
-          : 'bottom-10 h-auto w-[min(90vw,440px)]'
-      }`}
+      className={`pointer-events-auto absolute z-30 flex flex-col overflow-hidden border border-white/10 bg-black/20 backdrop-blur-md transition-[left] duration-300 ${leftClass} ${widthClass}`}
       style={{ borderRadius: 6 }}
     >
       {/* Header — shared between states, drives the layout morph. */}

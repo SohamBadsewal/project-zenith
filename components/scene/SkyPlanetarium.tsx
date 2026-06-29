@@ -165,7 +165,7 @@ export function SkyPlanetarium({
       <SunLight bodies={data.bodies} />
 
       <FocusScan objCands={objCands} conCands={conCands} layers={layers} setFocusId={setFocusId} onFocus={onFocus} />
-      <CameraTracker selectionId={selectionId} data={data} dateMs={dateMs} />
+      <CameraTracker selectionId={selectionId} onSelect={onSelect} data={data} dateMs={dateMs} />
 
       <InstancedStars stars={data.stars} visible={layers.stars} selectionId={starSelection} onSelect={onSelect} />
 
@@ -335,8 +335,18 @@ function IssOrbitTrack({ points }: { points: IssOrbitPoint[] }) {
   );
 }
 
-function CameraTracker({ selectionId, data, dateMs }: { selectionId: string | null; data: SkyData; dateMs: number }) {
-  const { camera, controls } = useThree();
+function CameraTracker({
+  selectionId,
+  onSelect,
+  data,
+  dateMs,
+}: {
+  selectionId: string | null;
+  onSelect: (id: string | null) => void;
+  data: SkyData;
+  dateMs: number;
+}) {
+  const { camera, controls, gl } = useThree();
   const observer = useZenith((s) => s.observer);
   const targetVec = useRef<THREE.Vector3 | null>(null);
 
@@ -437,7 +447,7 @@ function CameraTracker({ selectionId, data, dateMs }: { selectionId: string | nu
       // 22px is a perfect drag threshold - not too sensitive, not too stubborn
       if (dist > 22) {
         triggered = true;
-        useZenith.getState().select(null);
+        onSelect(null);
       }
     };
 
@@ -445,16 +455,17 @@ function CameraTracker({ selectionId, data, dateMs }: { selectionId: string | nu
       isDown = false;
     };
 
-    window.addEventListener('pointerdown', onPointerDown);
+    const dom = gl.domElement;
+    dom.addEventListener('pointerdown', onPointerDown);
     window.addEventListener('pointermove', onPointerMove);
     window.addEventListener('pointerup', onPointerUp);
 
     return () => {
-      window.removeEventListener('pointerdown', onPointerDown);
+      dom.removeEventListener('pointerdown', onPointerDown);
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
     };
-  }, [selectionId]);
+  }, [selectionId, gl, onSelect]);
 
   // Smoothly lerp camera position to point at targetVec
   useFrame(() => {
