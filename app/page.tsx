@@ -83,10 +83,21 @@ export default function Page() {
   }, [mounted]);
 
   useEffect(() => {
+    if (launch === 'magnifying' && useZenith.getState().skipAnimation) {
+      useZenith.getState().fireLaunch();
+    }
+  }, [launch]);
+
+  useEffect(() => {
     if (launch !== 'launched') return;
-    // Let the shuttle fly nearly its full ascent before we leave the launch scene.
-    const t = setTimeout(() => useZenith.getState().enterWarp(), 4800);
-    return () => clearTimeout(t);
+    const skip = useZenith.getState().skipAnimation;
+    if (skip) {
+      useZenith.getState().enterWarp();
+    } else {
+      // Let the shuttle fly nearly its full ascent before we leave the launch scene.
+      const t = setTimeout(() => useZenith.getState().enterWarp(), 4800);
+      return () => clearTimeout(t);
+    }
   }, [launch]);
 
   useEffect(() => {

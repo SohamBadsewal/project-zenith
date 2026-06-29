@@ -22,6 +22,8 @@ export interface ZenithStore {
   viewMode: ViewMode;
   sky: SkyState | null;
   globeIntro: boolean;
+  skipAnimation: boolean;
+  setSkipAnimation: (s: boolean) => void;
 
   setPhase: (p: Phase) => void;
   beginLaunch: (rect: DOMRect) => void;
@@ -58,7 +60,14 @@ export const useZenith = create<ZenithStore>((set, get) => ({
   viewMode: 'static',
   sky: null,
   globeIntro: true,
+  skipAnimation: typeof window !== 'undefined' ? localStorage.getItem('skip_animation') === 'true' : false,
 
+  setSkipAnimation: (skipAnimation) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('skip_animation', String(skipAnimation));
+    }
+    set({ skipAnimation });
+  },
   setPhase: (phase) => set({ phase }),
   beginLaunch: (rect) => get().launch === 'idle' && set({ launch: 'magnifying', shuttleRect: rect }),
   finishMagnify: () => get().launch === 'magnifying' && set({ launch: 'armed', shuttleRect: null }),

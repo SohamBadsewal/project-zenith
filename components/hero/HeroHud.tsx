@@ -14,6 +14,8 @@ export function HeroHud() {
   const armDrag = useZenith((s) => s.armDrag);
   const setTension = useZenith((s) => s.setTension);
   const releaseDrag = useZenith((s) => s.releaseDrag);
+  const skipAnimation = useZenith((s) => s.skipAnimation);
+  const setSkipAnimation = useZenith((s) => s.setSkipAnimation);
 
   const startY = useRef(0);
   const raf = useRef(0);
@@ -85,6 +87,31 @@ export function HeroHud() {
                 className="mt-4 animate-pulse font-mono text-[11px] uppercase tracking-[0.22em] text-white/50"
               >
                 ↑ hover over the button ↑
+              </div>
+
+              {/* Skip Animation Toggle */}
+              <div className="mt-7 flex flex-col items-center">
+                <label className="flex items-center gap-2.5 cursor-pointer group select-none">
+                  <input
+                    type="checkbox"
+                    checked={skipAnimation}
+                    onChange={(e) => setSkipAnimation(e.target.checked)}
+                    className="sr-only"
+                  />
+                  <div
+                    className={`w-[18px] h-[18px] flex items-center justify-center border transition-all duration-200 ${
+                      skipAnimation
+                        ? 'border-[var(--interactive)] bg-[var(--interactive)]/20 text-[var(--interactive)] shadow-[0_0_8px_rgba(91,155,246,0.4)]'
+                        : 'border-white/30 bg-transparent text-transparent group-hover:border-white/50'
+                    }`}
+                    style={{ borderRadius: 4 }}
+                  >
+                    <span className="font-doto text-[11px] font-bold leading-none">✓</span>
+                  </div>
+                  <span className="font-doto text-[11px] uppercase tracking-[0.18em] text-white/60 transition-colors duration-200 group-hover:text-white">
+                    Skip rocket launch animation
+                  </span>
+                </label>
               </div>
             </div>
           </div>
