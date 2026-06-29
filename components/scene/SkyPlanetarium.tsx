@@ -373,6 +373,7 @@ function CameraTracker({
   const { camera, controls, gl } = useThree();
   const observer = useZenith((s) => s.observer);
   const targetVec = useRef<THREE.Vector3 | null>(null);
+  const wasZoomed = useRef(false);
 
   // When selectionId changes, calculate its direction vector
   useEffect(() => {
@@ -503,6 +504,7 @@ function CameraTracker({
 
     const isZoomed = zoomTargetId && (zoomTargetId === selectionId);
     if (isZoomed && targetVec.current) {
+      wasZoomed.current = true;
       const targetObjPos = targetVec.current.clone().multiplyScalar(DOME_R);
       
       let offsetDist = 0.5;
@@ -547,7 +549,7 @@ function CameraTracker({
           controls.update();
         }
       });
-    } else {
+    } else if (wasZoomed.current) {
       // Zooming out to freeroam / wide sky view
       // @ts-ignore
       controls.enabled = false;
@@ -586,6 +588,7 @@ function CameraTracker({
           controls.maxDistance = 2;
           // @ts-ignore
           controls.update();
+          wasZoomed.current = false;
         }
       });
     }
